@@ -82,7 +82,11 @@ export function SettingsPage() {
     }
   }
 
-  const webhookUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/whatsapp` : '/api/whatsapp'
+  const webhookUrl = typeof window !== 'undefined'
+    ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'https://tautan-ai.vercel.app/api/whatsapp'
+        : `${window.location.origin}/api/whatsapp`)
+    : 'https://tautan-ai.vercel.app/api/whatsapp'
 
   const copyWebhookUrl = () => {
     navigator.clipboard.writeText(webhookUrl)
