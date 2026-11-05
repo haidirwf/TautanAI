@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai'
 import { createClient } from '@supabase/supabase-js'
-import type { Store, Product } from '@/types'
+import type { Store, Product } from '../types'
 
 // Initialize Supabase admin/client for serverless/edge environments
 function getSupabaseClient() {
