@@ -146,20 +146,6 @@ ATURAN UTAMA ANDA:
     {
       functionDeclarations: [
         {
-          name: 'check_stock',
-          description: 'Mengecek ketersediaan stok produk dan varian yang tersedia di katalog toko.',
-          parameters: {
-            type: 'OBJECT',
-            properties: {
-              product_name: {
-                type: 'STRING',
-                description: 'Nama atau kata kunci produk yang ingin dicari',
-              },
-            },
-            required: ['product_name'],
-          },
-        },
-        {
           name: 'create_order_draft',
           description: 'Membuat draf pesanan resmi baru di database saat pembeli menyetujui pembelian barang.',
           parameters: {
@@ -252,19 +238,7 @@ ATURAN UTAMA ANDA:
 
       let toolResult: any = {}
 
-      if (fnName === 'check_stock') {
-        const query = String(fnArgs.product_name || '').toLowerCase()
-        const found = products.filter((p: any) => p.name.toLowerCase().includes(query))
-        toolResult = {
-          success: true,
-          matches: found.map((p: any) => ({
-            name: p.name,
-            price: p.base_price,
-            stock: p.stock !== null && p.stock !== undefined ? p.stock : 'Selalu Tersedia',
-            ai_context: p.ai_context,
-          })),
-        }
-      } else if (fnName === 'create_order_draft') {
+      if (fnName === 'create_order_draft') {
         const orderCode = `ORD-${Date.now().toString(36).toUpperCase()}`
         const pId = fnArgs.product_id
         const prod = products.find((p: any) => p.id === pId) || products[0]
@@ -363,30 +337,51 @@ ATURAN UTAMA ANDA:
         ...contents,
         firstCandidate,
         {
-          role: 'user',
+          role: 'function',
           parts: [{
             functionResponse: {
               name: fnName,
-              response: toolResult,
+              response: {
+                name: fnName,
+                content: toolResult,
+              },
             },
           }],
         },
       ]
 
-      const secondRes = await fetch(geminiEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: secondContents,
-          systemInstruction: { parts: [{ text: systemInstructionText }] },
-          generationConfig: { temperature: 0.4 },
-        }),
-      })
+      try {
+        const secondRes = await fetch(geminiEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: secondContents,
+            systemInstruction: { parts: [{ text: systemInstructionText }] },
+            generationConfig: { temperature: 0.4 },
+          }),
+        })
 
-      const secondData = await secondRes.json()
-      finalReply = secondData?.candidates?.[0]?.content?.parts?.[0]?.text || 'Baik kak, pesanan Anda telah kami catat.'
+        const secondData = await secondRes.json()
+        const textFromCandidate = secondData?.candidates?.[0]?.content?.parts?.find((p: any) => p.text)?.text
+        if (textFromCandidate) {
+          finalReply = textFromCandidate
+        }
+      } catch (secErr) {
+        console.warn('Error in second Gemini turn:', secErr)
+      }
+
+      // Contextual fallbacks if model output is empty
+      if (!finalReply) {
+        if (fnName === 'create_order_draft' && toolResult.success) {
+          finalReply = `Pesanan Kakak berhasil kami catat dengan kode *${toolResult.order_code}* (Total: Rp${Number(toolResult.total_amount).toLocaleString('id-ID')}).\n\nSilakan transfer ke rekening toko:\n*${store.ai_payment_info || 'BCA: 1234567890'}*\n\nKirimkan bukti transfer di sini agar pesanan segera kami siapkan ya Kak! 🙏`
+        } else if (fnName === 'confirm_buyer_payment' && toolResult.success) {
+          finalReply = `Terima kasih banyak Kak! Pembayaran untuk pesanan *${toolResult.order_code}* telah berhasil diverifikasi lunas. Kami akan segera memproses pengirimannya! 🙏`
+        } else {
+          finalReply = 'Baik Kak, permohonan Anda telah kami proses.'
+        }
+      }
     } else {
-      finalReply = firstCandidate?.parts?.[0]?.text || 'Halo kak, ada yang bisa kami bantu seputar produk toko kami?'
+      finalReply = firstCandidate?.parts?.find((p: any) => p.text)?.text || 'Halo kak, ada yang bisa kami bantu seputar produk toko kami?'
     }
   } catch (error: any) {
     console.error('Gemini REST API execution error:', error)
