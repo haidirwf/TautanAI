@@ -1,6 +1,7 @@
-import { GoogleGenAI, Type } from '@google/genai'
 import { createClient } from '@supabase/supabase-js'
 import type { Store, Product } from '../types'
+
+declare const process: any
 
 // Initialize Supabase admin/client for serverless/edge environments
 function getSupabaseClient() {
@@ -40,7 +41,6 @@ export async function processIncomingWhatsAppMessage(
   // 1. Identify Store
   let storeQuery = supabase.from('stores').select('*')
   if (storeWhatsappOrDevice) {
-    // Match either whatsapp_number or fonnte_token
     storeQuery = storeQuery.or(
       `whatsapp_number.eq.${storeWhatsappOrDevice},whatsapp_number.eq.62${storeWhatsappOrDevice.replace(/^0/, '')},fonnte_token.eq.${storeWhatsappOrDevice}`
     )
@@ -91,15 +91,15 @@ export async function processIncomingWhatsAppMessage(
 
   const orderedHistory = (chatHistory || []).reverse()
 
-  // 5. Initialize Google Gemini AI Client
+  // 5. Initialize Google Gemini AI REST Endpoint
   const geminiApiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || ''
   if (!geminiApiKey) {
     console.error('Missing GEMINI_API_KEY')
     return { reply: 'Halo! Mohon maaf sistem AI kami sedang dalam konfigurasi kunci API. Pesan Anda segera dibalas penjual.' }
   }
 
-  const ai = new GoogleGenAI({ apiKey: geminiApiKey })
   const modelName = store.ai_model || process.env.VITE_GEMINI_MODEL || 'gemini-2.0-flash'
+  const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`
 
   // Prepare Catalog Context String
   const catalogContext = products.map((p) => {
@@ -112,7 +112,7 @@ export async function processIncomingWhatsAppMessage(
   }).join('\n')
 
   // System Instruction
-  const systemInstruction = `Anda adalah Asisten Penjualan & Layanan Pelanggan WhatsApp Otonom untuk toko "${store.name}".
+  const systemInstructionText = `Anda adalah Asisten Penjualan & Layanan Pelanggan WhatsApp Otonom untuk toko "${store.name}".
 Gaya Karakter / Persona Toko: "${store.ai_persona || 'Ramah, sopan, sigap membantu, dan mengedepankan keramahan wirausaha Bali.'}"
 Instruksi Operasional Toko: "${store.ai_instructions || 'Bantu pembeli menjawab pertanyaan seputar katalog, cek stok, rekap pesanan, dan verifikasi pembayaran transfer.'}"
 Panduan Rekening Pembayaran Toko: "${store.ai_payment_info || 'BCA: 1234567890 a/n Toko'}"
@@ -130,18 +130,18 @@ ATURAN UTAMA ANDA:
 4. Jika pembeli mengirim konfirmasi atau bukti transfer (termasuk foto bukti bayar), gunakan tool "confirm_buyer_payment" untuk mengubah status pesanan dari PENDING_WA menjadi PAID/PROCESSING secara otomatis di sistem toko.
 5. Jangan gunakan tanda pagar tiga (###) dalam pesan WhatsApp Anda. Gunakan format WhatsApp yang rapi (*tebal*, _miring_, poin-poin).`
 
-  // Define Function Calling Tools
-  const tools: any[] = [
+  // Define Function Calling Tools for REST API
+  const tools = [
     {
       functionDeclarations: [
         {
           name: 'check_stock',
           description: 'Mengecek ketersediaan stok produk dan varian yang tersedia di katalog toko.',
           parameters: {
-            type: Type.OBJECT,
+            type: 'OBJECT',
             properties: {
               product_name: {
-                type: Type.STRING,
+                type: 'STRING',
                 description: 'Nama atau kata kunci produk yang ingin dicari',
               },
             },
@@ -152,13 +152,13 @@ ATURAN UTAMA ANDA:
           name: 'create_order_draft',
           description: 'Membuat draf pesanan resmi baru di database saat pembeli menyetujui pembelian barang.',
           parameters: {
-            type: Type.OBJECT,
+            type: 'OBJECT',
             properties: {
-              buyer_name: { type: Type.STRING, description: 'Nama pembeli' },
-              shipping_address: { type: Type.STRING, description: 'Alamat lengkap pengiriman barang' },
-              product_id: { type: Type.STRING, description: 'ID produk yang dipesan' },
-              quantity: { type: Type.INTEGER, description: 'Jumlah barang' },
-              variant_info: { type: Type.STRING, description: 'Pilihan varian (misal: Ukuran XL, Warna Hitam)' },
+              buyer_name: { type: 'STRING', description: 'Nama pembeli' },
+              shipping_address: { type: 'STRING', description: 'Alamat lengkap pengiriman barang' },
+              product_id: { type: 'STRING', description: 'ID produk yang dipesan' },
+              quantity: { type: 'INTEGER', description: 'Jumlah barang' },
+              variant_info: { type: 'STRING', description: 'Pilihan varian (misal: Ukuran XL, Warna Hitam)' },
             },
             required: ['buyer_name'],
           },
@@ -167,10 +167,10 @@ ATURAN UTAMA ANDA:
           name: 'confirm_buyer_payment',
           description: 'Mengubah status pesanan menjadi PAID atau PROCESSING saat pembeli mengirim bukti transfer atau konfirmasi lunas.',
           parameters: {
-            type: Type.OBJECT,
+            type: 'OBJECT',
             properties: {
-              order_code: { type: Type.STRING, description: 'Kode pesanan pembeli (misal: ORD-...)' },
-              payment_notes: { type: Type.STRING, description: 'Catatan bukti pembayaran / bank pengirim' },
+              order_code: { type: 'STRING', description: 'Kode pesanan pembeli (misal: ORD-...)' },
+              payment_notes: { type: 'STRING', description: 'Catatan bukti pembayaran / bank pengirim' },
             },
             required: ['order_code'],
           },
@@ -207,22 +207,27 @@ ATURAN UTAMA ANDA:
   let targetOrderCode: string | undefined
 
   try {
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents,
-      config: {
-        systemInstruction,
+    const firstRes = await fetch(geminiEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents,
+        systemInstruction: { parts: [{ text: systemInstructionText }] },
         tools,
-        temperature: 0.4,
-      },
+        generationConfig: { temperature: 0.4 },
+      }),
     })
 
-    // Check Function Calls
-    const functionCalls = response.functionCalls || []
+    const firstData = await firstRes.json()
+    const firstCandidate = firstData?.candidates?.[0]?.content
 
-    if (functionCalls.length > 0) {
-      const toolCall = functionCalls[0]
-      const { name: fnName, args: fnArgs } = toolCall as { name: string; args: Record<string, any> }
+    // Check for Function Calls
+    const functionCallPart = firstCandidate?.parts?.find((p: any) => p.functionCall)
+
+    if (functionCallPart && functionCallPart.functionCall) {
+      const toolCall = functionCallPart.functionCall
+      const fnName = toolCall.name
+      const fnArgs = toolCall.args || {}
 
       let toolResult: any = {}
 
@@ -311,7 +316,6 @@ ATURAN UTAMA ANDA:
             message: 'Status pesanan berhasil diubah menjadi Lunas (PAID). Siap dipacking oleh penjual.',
           }
         } else {
-          // If exact code not found, try updating the latest pending order for this customer
           if (recentOrders && recentOrders.length > 0) {
             const latest = recentOrders[0]
             await supabase.from('orders').update({
@@ -333,37 +337,38 @@ ATURAN UTAMA ANDA:
         }
       }
 
-      // Second turn with tool result to formulate final friendly response
-      const secondTurn = await ai.models.generateContent({
-        model: modelName,
-        contents: [
-          ...contents,
-          {
-            role: 'model',
-            parts: [{ functionCall: toolCall }],
-          },
-          {
-            role: 'user',
-            parts: [{
-              functionResponse: {
-                name: fnName,
-                response: toolResult,
-              },
-            }],
-          },
-        ],
-        config: {
-          systemInstruction,
-          temperature: 0.4,
+      // Second turn with tool result to get final reply text
+      const secondContents = [
+        ...contents,
+        firstCandidate,
+        {
+          role: 'user',
+          parts: [{
+            functionResponse: {
+              name: fnName,
+              response: toolResult,
+            },
+          }],
         },
+      ]
+
+      const secondRes = await fetch(geminiEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: secondContents,
+          systemInstruction: { parts: [{ text: systemInstructionText }] },
+          generationConfig: { temperature: 0.4 },
+        }),
       })
 
-      finalReply = secondTurn.text || 'Baik kak, pesanan Anda telah kami catat.'
+      const secondData = await secondRes.json()
+      finalReply = secondData?.candidates?.[0]?.content?.parts?.[0]?.text || 'Baik kak, pesanan Anda telah kami catat.'
     } else {
-      finalReply = response.text || 'Halo kak, ada yang bisa kami bantu seputar produk toko kami?'
+      finalReply = firstCandidate?.parts?.[0]?.text || 'Halo kak, ada yang bisa kami bantu seputar produk toko kami?'
     }
   } catch (error: any) {
-    console.error('Gemini API execution error:', error)
+    console.error('Gemini REST API execution error:', error)
     finalReply = 'Halo kak, mohon maaf terjadi kendala sementara di sistem AI kami. Pesan Anda segera dijawab oleh admin toko kami.'
   }
 
