@@ -221,7 +221,7 @@ ATURAN UTAMA ANDA:
         contents,
         systemInstruction: { parts: [{ text: systemInstructionText }] },
         tools,
-        generationConfig: { temperature: 0.4 },
+        generationConfig: { temperature: 0.3, maxOutputTokens: 350 },
       }),
     })
 
@@ -236,7 +236,7 @@ ATURAN UTAMA ANDA:
           contents,
           systemInstruction: { parts: [{ text: systemInstructionText }] },
           tools,
-          generationConfig: { temperature: 0.4 },
+          generationConfig: { temperature: 0.3, maxOutputTokens: 350 },
         }),
       })
       firstData = await retryRes.json()
@@ -420,7 +420,30 @@ ATURAN UTAMA ANDA:
   }
 }
 
-// 4. Main Vercel Serverless HTTP Handler
+// In-memory deduplication cache to prevent Fonnte duplicate webhook retries
+const processedMessagesCache = new Map<string, number>()
+
+function isDuplicateRequest(sender: string, message: string): boolean {
+  const now = Date.now()
+  // Clean old cache entries older than 30 seconds
+  for (const [key, timestamp] of processedMessagesCache.entries()) {
+    if (now - timestamp > 30000) {
+      processedMessagesCache.delete(key)
+    }
+  }
+
+  const cacheKey = `${sender}:${message.trim()}`
+  if (processedMessagesCache.has(cacheKey)) {
+    const lastSeen = processedMessagesCache.get(cacheKey) || 0
+    if (now - lastSeen < 15000) {
+      return true
+    }
+  }
+
+  processedMessagesCache.set(cacheKey, now)
+  return false
+}
+
 export default async function handler(req: any, res: any) {
   res.setHeader('Access-Control-Allow-Credentials', 'true')
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -461,6 +484,11 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: 'Sender phone number is required' })
     }
 
+    // Deduplication gate: If Fonnte retries the exact same message within 15 seconds, exit immediately
+    if (isDuplicateRequest(sender, message)) {
+      return res.status(200).json({ status: 'ignored_duplicate_webhook' })
+    }
+
     // Process incoming message with Gemini AI Engine
     const result = await processIncomingWhatsAppMessage({
       senderPhone: sender,
@@ -470,13 +498,8 @@ export default async function handler(req: any, res: any) {
       storeWhatsappOrDevice: device,
     })
 
-    // If Fonnte token is available, actively dispatch reply via Fonnte REST API for guaranteed delivery
-    const activeFonnteToken = result.fonnteToken || process.env.FONNTE_TOKEN
-    if (activeFonnteToken && result.reply) {
-      await dispatchFonnteMessage(activeFonnteToken, sender, result.reply)
-    }
-
-    // Also return JSON response format for Fonnte Webhook auto-reply
+    // Return single JSON response for Fonnte Webhook auto-reply.
+    // Do NOT dispatch via Fonnte REST API concurrently to prevent double messages and timeout retries.
     return res.status(200).json({
       reply: result.reply,
       orderUpdated: result.orderUpdated,
