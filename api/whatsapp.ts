@@ -498,10 +498,14 @@ export default async function handler(req: any, res: any) {
       storeWhatsappOrDevice: device,
     })
 
-    // Return single JSON response for Fonnte Webhook auto-reply.
-    // Do NOT dispatch via Fonnte REST API concurrently to prevent double messages and timeout retries.
+    // Fonnte official protocol: Dispatch reply to https://api.fonnte.com/send
+    const activeFonnteToken = result.fonnteToken || process.env.FONNTE_TOKEN
+    if (activeFonnteToken && result.reply) {
+      await dispatchFonnteMessage(activeFonnteToken, sender, result.reply)
+    }
+
     return res.status(200).json({
-      reply: result.reply,
+      status: true,
       orderUpdated: result.orderUpdated,
       orderCreated: result.orderCreated,
       orderCode: result.orderCode,
