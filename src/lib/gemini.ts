@@ -24,6 +24,7 @@ export interface ProcessWhatsAppMessageResult {
   orderUpdated?: boolean
   orderCreated?: boolean
   orderCode?: string
+  fonnteToken?: string
 }
 
 export async function processIncomingWhatsAppMessage(
@@ -391,5 +392,6 @@ ATURAN UTAMA ANDA:
     orderUpdated,
     orderCreated,
     orderCode: targetOrderCode,
+    fonnteToken: store.fonnte_token,
   }
 }

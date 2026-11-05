@@ -1,5 +1,26 @@
 import { processIncomingWhatsAppMessage } from '../src/lib/gemini'
 
+async function dispatchFonnteMessage(token: string, target: string, message: string) {
+  try {
+    const res = await fetch('https://api.fonnte.com/send', {
+      method: 'POST',
+      headers: {
+        Authorization: token,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        target,
+        message,
+        typing: false,
+      }),
+    })
+    return await res.json()
+  } catch (err) {
+    console.error('Error dispatching message to Fonnte API:', err)
+    return null
+  }
+}
+
 export default async function handler(req: any, res: any) {
   // CORS configuration
   res.setHeader('Access-Control-Allow-Credentials', 'true')
@@ -14,7 +35,7 @@ export default async function handler(req: any, res: any) {
     return res.status(200).end()
   }
 
-  // Health check / GET ping
+  // Health check / GET ping (Required by Fonnte: webhook URL must allow GET & POST)
   if (req.method === 'GET') {
     return res.status(200).json({
       status: 'active',
@@ -50,7 +71,13 @@ export default async function handler(req: any, res: any) {
       storeWhatsappOrDevice: device,
     })
 
-    // Return JSON response format compatible with Fonnte Webhook auto-reply
+    // If Fonnte token is available, actively dispatch reply via Fonnte REST API for guaranteed delivery
+    const activeFonnteToken = result.fonnteToken || process.env.FONNTE_TOKEN
+    if (activeFonnteToken && result.reply) {
+      await dispatchFonnteMessage(activeFonnteToken, sender, result.reply)
+    }
+
+    // Also return JSON response format for Fonnte Webhook auto-reply
     return res.status(200).json({
       reply: result.reply,
       orderUpdated: result.orderUpdated,
