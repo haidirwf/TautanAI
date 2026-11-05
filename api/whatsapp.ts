@@ -13,6 +13,7 @@ async function dispatchFonnteMessage(token: string, target: string, message: str
   try {
     const res = await fetch('https://api.fonnte.com/send', {
       method: 'POST',
+      signal: AbortSignal.timeout(4000),
       headers: {
         Authorization: token,
         'Content-Type': 'application/json',
