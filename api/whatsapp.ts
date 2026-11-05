@@ -99,15 +99,19 @@ async function processIncomingWhatsAppMessage(input: ProcessWhatsAppInput) {
 
   const orderedHistory = (chatHistory || []).reverse()
 
-  // Gemini REST Endpoint
+  // Gemini REST Endpoint with Intelligent Model Selection & Fallback
   const geminiApiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || ''
   if (!geminiApiKey) {
     console.error('Missing GEMINI_API_KEY')
     return { reply: 'Halo! Mohon maaf sistem AI kami sedang dalam konfigurasi kunci API. Pesan Anda segera dibalas penjual.' }
   }
 
-  const modelName = store.ai_model || process.env.VITE_GEMINI_MODEL || 'gemini-2.0-flash'
-  const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`
+  let modelName = store.ai_model || process.env.VITE_GEMINI_MODEL || 'gemini-3.1-flash-lite'
+  if (modelName.includes('2.0') || modelName.includes('1.5') || modelName.includes('2.5')) {
+    modelName = 'gemini-3.1-flash-lite'
+  }
+
+  let geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`
 
   const catalogContext = products.map((p) => {
     const variants = (p.variant_groups || []).map((g: any) => `${g.name}: [${(g.options || g.variant_options || []).map((o: any) => `${o.name} (+${o.price_delta})`).join(', ')}]`).join('; ')
@@ -209,7 +213,7 @@ ATURAN UTAMA ANDA:
   let targetOrderCode: string | undefined
 
   try {
-    const firstRes = await fetch(geminiEndpoint, {
+    let firstRes = await fetch(geminiEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -220,7 +224,22 @@ ATURAN UTAMA ANDA:
       }),
     })
 
-    const firstData = await firstRes.json()
+    let firstData = await firstRes.json()
+    if (firstRes.status !== 200) {
+      console.warn('Primary Gemini model error:', firstData?.error?.message, '- Falling back to gemini-3.1-flash-lite')
+      const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${geminiApiKey}`
+      const retryRes = await fetch(fallbackUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents,
+          systemInstruction: { parts: [{ text: systemInstructionText }] },
+          tools,
+          generationConfig: { temperature: 0.4 },
+        }),
+      })
+      firstData = await retryRes.json()
+    }
     const firstCandidate = firstData?.candidates?.[0]?.content
     const functionCallPart = firstCandidate?.parts?.find((p: any) => p.functionCall)
 

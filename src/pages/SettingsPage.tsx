@@ -19,7 +19,7 @@ export function SettingsPage() {
   const [aiPersona, setAiPersona] = useState('Ramah, sopan, sigap membantu, dan mengedepankan keramahan wirausaha Bali.')
   const [aiInstructions, setAiInstructions] = useState('Bantu pembeli mengecek ketersediaan produk, jelaskan detail dan varian barang, hitung total pesanan, dan pandu pembayaran transfer atau QRIS.')
   const [aiPaymentInfo, setAiPaymentInfo] = useState('BCA: 1234567890 a/n Toko | QRIS tersedia')
-  const [aiModel, setAiModel] = useState('gemini-2.0-flash')
+  const [aiModel, setAiModel] = useState('gemini-3.1-flash-lite')
   const [fonnteToken, setFonnteToken] = useState('')
 
   const [saved, setSaved] = useState(false)
@@ -248,9 +248,9 @@ export function SettingsPage() {
                   onChange={(e) => setAiModel(e.target.value)}
                   className="w-full h-10 px-3 rounded-lg bg-white border border-[#e8e2d9] text-xs sm:text-sm text-[#141413] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs cursor-pointer font-mono"
                 >
-                  <option value="gemini-2.0-flash">gemini-2.0-flash (Direkomendasikan - Cepat & Stabil)</option>
-                  <option value="gemini-1.5-flash">gemini-1.5-flash (Ringan & Cepat)</option>
-                  <option value="gemini-1.5-pro">gemini-1.5-pro (Penalaran Kompleks)</option>
+                  <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Direkomendasikan - Sangat Cepat & Stabil)</option>
+                  <option value="gemini-3.8-flash">gemini-3.8-flash (Model Flagship Cerdas)</option>
+                  <option value="gemini-flash-latest">gemini-flash-latest (Auto Model Terbaru)</option>
                 </select>
               </div>
 
