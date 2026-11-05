@@ -13,7 +13,7 @@ async function dispatchFonnteMessage(token: string, target: string, message: str
   try {
     const res = await fetch('https://api.fonnte.com/send', {
       method: 'POST',
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(12000),
       headers: {
         Authorization: token,
         'Content-Type': 'application/json',
@@ -21,10 +21,11 @@ async function dispatchFonnteMessage(token: string, target: string, message: str
       body: JSON.stringify({
         target,
         message,
-        typing: false,
+        countryCode: '62',
       }),
     })
-    return await res.json()
+    const data = await res.json()
+    return data
   } catch (err) {
     console.error('Error dispatching message to Fonnte API:', err)
     return null
@@ -423,19 +424,29 @@ ATURAN UTAMA ANDA:
 // In-memory deduplication cache to prevent Fonnte duplicate webhook retries
 const processedMessagesCache = new Map<string, number>()
 
-function isDuplicateRequest(sender: string, message: string): boolean {
+function isDuplicateRequest(body: any): boolean {
   const now = Date.now()
-  // Clean old cache entries older than 30 seconds
   for (const [key, timestamp] of processedMessagesCache.entries()) {
     if (now - timestamp > 30000) {
       processedMessagesCache.delete(key)
     }
   }
 
-  const cacheKey = `${sender}:${message.trim()}`
+  const uniqueId = body.inboxid || body.id
+  if (uniqueId) {
+    if (processedMessagesCache.has(`id:${uniqueId}`)) {
+      return true
+    }
+    processedMessagesCache.set(`id:${uniqueId}`, now)
+    return false
+  }
+
+  const sender = String(body.sender || body.from || body.phone || '')
+  const message = String(body.message || body.text || '')
+  const cacheKey = `msg:${sender}:${message.trim()}`
   if (processedMessagesCache.has(cacheKey)) {
     const lastSeen = processedMessagesCache.get(cacheKey) || 0
-    if (now - lastSeen < 15000) {
+    if (now - lastSeen < 3000) {
       return true
     }
   }
@@ -484,8 +495,8 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: 'Sender phone number is required' })
     }
 
-    // Deduplication gate: If Fonnte retries the exact same message within 15 seconds, exit immediately
-    if (isDuplicateRequest(sender, message)) {
+    // Deduplication gate: If Fonnte retries the exact same message within 4 seconds, exit immediately
+    if (isDuplicateRequest(body)) {
       return res.status(200).json({ status: 'ignored_duplicate_webhook' })
     }
 
@@ -499,7 +510,7 @@ export default async function handler(req: any, res: any) {
     })
 
     // Fonnte official protocol: Dispatch reply to https://api.fonnte.com/send
-    const activeFonnteToken = result.fonnteToken || process.env.FONNTE_TOKEN
+    const activeFonnteToken = result.fonnteToken || process.env.FONNTE_TOKEN || 'SFjQ1582ANj1k7JvUEtV'
     if (activeFonnteToken && result.reply) {
       await dispatchFonnteMessage(activeFonnteToken, sender, result.reply)
     }
