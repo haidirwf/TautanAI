@@ -343,6 +343,7 @@ export const api = {
           is_digital: dbFields.is_digital ?? false,
           is_active: dbFields.is_active ?? true,
           sort_order: dbFields.sort_order ?? 1,
+          ai_context: dbFields.ai_context?.trim() || '',
         }])
         .select()
         .single()

@@ -14,6 +14,12 @@ export interface Store {
   avatar_url: string
   whatsapp_number: string
   is_onboarded?: boolean
+  ai_enabled?: boolean
+  ai_persona?: string
+  ai_instructions?: string
+  ai_payment_info?: string
+  ai_model?: string
+  fonnte_token?: string
   created_at?: string
   updated_at?: string
 }
@@ -63,6 +69,7 @@ export interface Product {
   sort_order: number
   stock?: number | null // null or undefined means unlimited / selalu tersedia
   variant_groups?: VariantGroup[]
+  ai_context?: string // Catatan/pengetahuan mendalam khusus untuk AI (cara pakai, bahan, rekomendasi ukuran, dsb)
 }
 
 export interface CartItem {
@@ -98,12 +105,24 @@ export interface Order {
   courier_name?: string
   tracking_number?: string
   seller_internal_note?: string
+  managed_by_ai?: boolean
+  ai_summary?: string
+  payment_proof_url?: string
   items_snapshot: OrderItem[]
   paid_at?: string | null
   shipped_at?: string | null
   completed_at?: string | null
   created_at: string
   updated_at?: string
+}
+
+export interface AIChatMessage {
+  id?: string
+  store_id: string
+  buyer_phone: string
+  role: 'user' | 'model' | 'system'
+  content: string
+  created_at?: string
 }
 
 export interface DashboardMetrics {

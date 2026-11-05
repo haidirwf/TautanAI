@@ -216,6 +216,11 @@ export function OrdersPage() {
                         <span className="font-mono text-xs font-semibold text-[#141413] bg-[#faf8f5] px-2 py-0.5 rounded border border-[#e8e2d9] shrink-0">
                           {order.order_code}
                         </span>
+                        {order.managed_by_ai && (
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#f5efe6] text-[#706c64] border border-[#e8e2d9] shrink-0">
+                            AI Agent
+                          </span>
+                        )}
                         <Badge status={order.status} />
                       </div>
                       <span className="text-[11px] text-[#8c867b] font-mono shrink-0">
@@ -318,9 +323,16 @@ export function OrdersPage() {
                       >
                         {/* 1. Pesanan */}
                         <td className="py-3.5 px-5 align-middle">
-                          <span className="font-mono text-xs font-semibold text-[#141413] block">
-                            {order.order_code}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-xs font-semibold text-[#141413]">
+                              {order.order_code}
+                            </span>
+                            {order.managed_by_ai && (
+                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#f5efe6] text-[#706c64] border border-[#e8e2d9]">
+                                AI Agent
+                              </span>
+                            )}
+                          </div>
                           <span className="text-[11px] text-[#8c867b] block mt-0.5 font-mono">
                             {new Date(order.created_at).toLocaleDateString('id-ID', {
                               day: 'numeric',

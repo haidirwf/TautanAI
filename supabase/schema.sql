@@ -1,6 +1,6 @@
 -- ==============================================================================
--- tautan.site: PostgreSQL Database Schema & Row Level Security (RLS) Policies
--- Built for Supabase Backend (Production-Grade & 100% Idempotent)
+-- TautanAI: PostgreSQL Database Schema & Row Level Security (RLS) Policies
+-- Built for Supabase Backend with Autonomous AI WhatsApp Commerce
 -- ==============================================================================
 
 -- 1. Profiles / Tenants (Stores)
@@ -13,15 +13,28 @@ CREATE TABLE IF NOT EXISTS stores (
   avatar_url TEXT DEFAULT '',
   whatsapp_number TEXT DEFAULT '', -- Format: 628...
   is_onboarded BOOLEAN DEFAULT false,
+  -- AI Configuration Fields
+  ai_enabled BOOLEAN DEFAULT true,
+  ai_persona TEXT DEFAULT 'Ramah, sopan, sigap membantu, dan mengedepankan keramahan wirausaha Bali.',
+  ai_instructions TEXT DEFAULT 'Bantu pembeli mengecek ketersediaan produk, jelaskan detail dan varian barang, hitung total pesanan, dan pandu pembayaran.',
+  ai_payment_info TEXT DEFAULT 'BCA: 1234567890 a/n Toko | QRIS tersedia',
+  ai_model TEXT DEFAULT 'gemini-2.0-flash',
+  fonnte_token TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Ensure all columns and defaults are up to date if table already existed
+-- Ensure all columns and defaults are up to date if table already exists
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS tagline TEXT DEFAULT '';
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS avatar_url TEXT DEFAULT '';
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS whatsapp_number TEXT DEFAULT '';
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS is_onboarded BOOLEAN DEFAULT false;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS ai_enabled BOOLEAN DEFAULT true;
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS ai_persona TEXT DEFAULT 'Ramah, sopan, sigap membantu, dan mengedepankan keramahan wirausaha Bali.';
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS ai_instructions TEXT DEFAULT 'Bantu pembeli mengecek ketersediaan produk, jelaskan detail dan varian barang, hitung total pesanan, dan pandu pembayaran.';
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS ai_payment_info TEXT DEFAULT 'BCA: 1234567890 a/n Toko | QRIS tersedia';
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS ai_model TEXT DEFAULT 'gemini-2.0-flash';
+ALTER TABLE stores ADD COLUMN IF NOT EXISTS fonnte_token TEXT DEFAULT '';
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
 ALTER TABLE stores ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
 
@@ -69,6 +82,8 @@ CREATE TABLE IF NOT EXISTS products (
   is_digital BOOLEAN DEFAULT false,
   is_active BOOLEAN DEFAULT true,
   sort_order INT DEFAULT 0,
+  -- Product Specific Context for AI Knowledge
+  ai_context TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -80,6 +95,7 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS stock INT DEFAULT NULL;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS is_digital BOOLEAN DEFAULT false;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS sort_order INT DEFAULT 0;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS ai_context TEXT DEFAULT '';
 ALTER TABLE products ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
 
 -- 5. Product Variant Groups (e.g. Size, Color)
@@ -121,6 +137,10 @@ CREATE TABLE IF NOT EXISTS orders (
   courier_name TEXT DEFAULT '',                   -- e.g. 'JNE Regular', 'J&T', 'SiCepat'
   tracking_number TEXT DEFAULT '',                -- Resi pengiriman
   seller_internal_note TEXT DEFAULT '',           -- Catatan khusus penjual
+  -- AI Automation tracking
+  managed_by_ai BOOLEAN DEFAULT true,
+  ai_summary TEXT DEFAULT '',
+  payment_proof_url TEXT DEFAULT '',
   paid_at TIMESTAMPTZ,
   shipped_at TIMESTAMPTZ,
   completed_at TIMESTAMPTZ,
@@ -136,6 +156,9 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'MANUAL_
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_name TEXT DEFAULT '';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number TEXT DEFAULT '';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS seller_internal_note TEXT DEFAULT '';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS managed_by_ai BOOLEAN DEFAULT true;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS ai_summary TEXT DEFAULT '';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_proof_url TEXT DEFAULT '';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipped_at TIMESTAMPTZ;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
@@ -152,6 +175,16 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- 9. AI WhatsApp Chat Sessions (Conversation Context for Gemini)
+CREATE TABLE IF NOT EXISTS ai_chat_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  store_id UUID REFERENCES stores(id) ON DELETE CASCADE NOT NULL,
+  buyer_phone TEXT NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('user', 'model', 'system')),
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- ==============================================================================
 -- Indexes for High Performance Querying
 -- ==============================================================================
@@ -164,6 +197,7 @@ CREATE INDEX IF NOT EXISTS idx_variant_options_group ON variant_options(group_id
 CREATE INDEX IF NOT EXISTS idx_orders_store_status ON orders(store_id, status);
 CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_reviews_store ON reviews(store_id);
+CREATE INDEX IF NOT EXISTS idx_ai_chat_session ON ai_chat_sessions(store_id, buyer_phone, created_at ASC);
 
 -- ==============================================================================
 -- Row Level Security (RLS) Setup
@@ -176,6 +210,7 @@ ALTER TABLE variant_groups ENABLE ROW LEVEL SECURITY;
 ALTER TABLE variant_options ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_chat_sessions ENABLE ROW LEVEL SECURITY;
 
 -- 1. Stores Policies
 DROP POLICY IF EXISTS "Public can view active stores" ON stores;
@@ -296,6 +331,11 @@ CREATE POLICY "Owners can manage reviews" ON reviews
   USING (EXISTS (SELECT 1 FROM stores WHERE stores.id = reviews.store_id AND stores.user_id = auth.uid()))
   WITH CHECK (EXISTS (SELECT 1 FROM stores WHERE stores.id = reviews.store_id AND stores.user_id = auth.uid()));
 
+-- 8. AI Chat Sessions Policies
+DROP POLICY IF EXISTS "Public or service role can manage ai_chat_sessions" ON ai_chat_sessions;
+CREATE POLICY "Public or service role can manage ai_chat_sessions" ON ai_chat_sessions
+  FOR ALL USING (true) WITH CHECK (true);
+
 -- ==============================================================================
 -- Automatic Store Creation Trigger on User Sign Up (Supabase Auth)
 -- ==============================================================================
@@ -364,24 +404,7 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ==============================================================================
--- Backfill Existing Auth Users Who Do Not Have a Store Record Yet
--- ==============================================================================
-INSERT INTO public.stores (user_id, name, slug, whatsapp_number, tagline, is_onboarded)
-SELECT 
-  u.id,
-  COALESCE(u.raw_user_meta_data->>'store_name', u.raw_user_meta_data->>'full_name', u.raw_user_meta_data->>'name', split_part(u.email, '@', 1), 'Toko') AS name,
-  lower(regexp_replace(split_part(u.email, '@', 1), '[^a-zA-Z0-9]', '-', 'g')) || '-' || substr(replace(u.id::text, '-', ''), 1, 6) AS slug,
-  COALESCE(u.raw_user_meta_data->>'whatsapp_number', '') AS whatsapp_number,
-  COALESCE(u.raw_user_meta_data->>'tagline', '') AS tagline,
-  false AS is_onboarded
-FROM auth.users u
-WHERE NOT EXISTS (
-  SELECT 1 FROM public.stores s WHERE s.user_id = u.id
-)
-ON CONFLICT (user_id) DO NOTHING;
-
--- ==============================================================================
--- Storage Bucket Setup for Product Images
+-- Storage Bucket Setup for Product Images & Payment Proofs
 -- ==============================================================================
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('product-images', 'product-images', true)

@@ -38,6 +38,7 @@ export function CatalogPage() {
   const [stockQuantity, setStockQuantity] = useState('10')
   const [hasVariants, setHasVariants] = useState(false)
   const [variantGroups, setVariantGroups] = useState<VariantGroupDraft[]>([])
+  const [aiContext, setAiContext] = useState('')
 
   // Edit product states
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -52,6 +53,7 @@ export function CatalogPage() {
   const [editStockQuantity, setEditStockQuantity] = useState('10')
   const [editHasVariants, setEditHasVariants] = useState(false)
   const [editVariantGroups, setEditVariantGroups] = useState<VariantGroupDraft[]>([])
+  const [editAiContext, setEditAiContext] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -92,6 +94,7 @@ export function CatalogPage() {
         sort_order: products.length + 1,
         stock: manageStock ? (parseInt(stockQuantity, 10) >= 0 ? parseInt(stockQuantity, 10) : 0) : null,
         variant_groups: hasVariants ? draftToVariantGroups(variantGroups) : undefined,
+        ai_context: aiContext.trim(),
       })
 
       setProducts([created, ...products])
@@ -99,6 +102,7 @@ export function CatalogPage() {
       setPrice('')
       setDescription('')
       setImageUrl('')
+      setAiContext('')
       setManageStock(false)
       setStockQuantity('10')
       setHasVariants(false)
@@ -120,6 +124,7 @@ export function CatalogPage() {
     setEditDesc(prod.description || '')
     setEditImageUrl(prod.image_url || '')
     setEditIsActive(prod.is_active)
+    setEditAiContext(prod.ai_context || '')
 
     const isTrackingStock = prod.stock !== undefined && prod.stock !== null
     setEditManageStock(isTrackingStock)
@@ -146,6 +151,7 @@ export function CatalogPage() {
         is_active: editIsActive,
         stock: editManageStock ? (parseInt(editStockQuantity, 10) >= 0 ? parseInt(editStockQuantity, 10) : 0) : null,
         variant_groups: editHasVariants ? draftToVariantGroups(editVariantGroups, editingProduct.id) : [],
+        ai_context: editAiContext.trim(),
       })
 
       setProducts((prev) =>
@@ -550,6 +556,25 @@ export function CatalogPage() {
                   className="w-full p-3 rounded-xl bg-white border border-[#e8e2d9] text-sm text-[#141413] placeholder:text-[#a09a8f] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs resize-none"
                 />
               </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-[#141413]">
+                    Konteks Khusus AI (WhatsApp Knowledge)
+                  </label>
+                  <span className="text-[11px] font-mono text-[#706c64]">Konteks Gemini</span>
+                </div>
+                <textarea
+                  rows={3}
+                  placeholder="Contoh: Bahan katun endek asli Bali, adem dan tidak luntur. Panduan ukuran: jika BB > 70kg sarankan XL. Garansi tukar size 3 hari."
+                  value={aiContext}
+                  onChange={(e) => setAiContext(e.target.value)}
+                  className="w-full p-3 rounded-xl bg-white border border-[#e8e2d9] text-xs sm:text-sm text-[#141413] placeholder:text-[#a09a8f] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs resize-none"
+                />
+                <p className="text-[11px] text-[#706c64] mt-1">
+                  AI akan menyerap info ini saat calon pembeli menanyakan spesifikasi produk lewat WhatsApp.
+                </p>
+              </div>
             </div>
 
             {/* Right Column: Stok & Varian Produk (6 cols) */}
@@ -695,6 +720,25 @@ export function CatalogPage() {
                   onChange={(e) => setEditDesc(e.target.value)}
                   className="w-full p-3 rounded-xl bg-white border border-[#e8e2d9] text-sm text-[#141413] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs resize-none"
                 />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-[#141413]">
+                    Konteks Khusus AI (WhatsApp Knowledge)
+                  </label>
+                  <span className="text-[11px] font-mono text-[#706c64]">Konteks Gemini</span>
+                </div>
+                <textarea
+                  rows={3}
+                  placeholder="Contoh: Bahan katun endek asli Bali, adem dan tidak luntur. Panduan ukuran: jika BB > 70kg sarankan XL."
+                  value={editAiContext}
+                  onChange={(e) => setEditAiContext(e.target.value)}
+                  className="w-full p-3 rounded-xl bg-white border border-[#e8e2d9] text-xs sm:text-sm text-[#141413] placeholder:text-[#a09a8f] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs resize-none"
+                />
+                <p className="text-[11px] text-[#706c64] mt-1">
+                  AI akan menyerap info ini saat calon pembeli menanyakan spesifikasi produk lewat WhatsApp.
+                </p>
               </div>
             </div>
 

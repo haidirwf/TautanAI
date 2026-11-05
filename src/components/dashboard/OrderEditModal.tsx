@@ -125,6 +125,27 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
               ))}
             </div>
           </div>
+
+          {order.managed_by_ai && (
+            <div className="pt-2.5 border-t border-[#e8e2d9]/60">
+              <span className="text-[10px] uppercase font-mono tracking-wider text-[#706c64] block mb-1">
+                Layanan AI WhatsApp Agent
+              </span>
+              <p className="text-xs text-[#5c5850]">
+                {order.ai_summary || 'Pesanan dan status diproses secara otonom oleh AI WhatsApp Copilot.'}
+              </p>
+              {order.payment_proof_url && (
+                <a
+                  href={order.payment_proof_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-xs text-[#cc785c] underline font-medium mt-1"
+                >
+                  Lihat Lampiran Bukti Transfer Pelanggan
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Order Lifecycle Status Picker */}
