@@ -71,7 +71,13 @@ async function processIncomingWhatsAppMessage(input: ProcessWhatsAppInput) {
     return { reply: 'Terima kasih telah menghubungi kami. Pesan Anda telah kami terima dan akan segera dibalas oleh admin.' }
   }
 
-  const cleanPhone = senderPhone.replace(/[^0-9]/g, '')
+  let cleanPhone = senderPhone.replace(/@.*$/, '').replace(/[^0-9]/g, '')
+  if (cleanPhone.startsWith('0')) {
+    cleanPhone = '62' + cleanPhone.slice(1)
+  } else if (cleanPhone.startsWith('8')) {
+    cleanPhone = '62' + cleanPhone
+  }
+  const altPhone = cleanPhone.startsWith('62') ? '0' + cleanPhone.slice(2) : cleanPhone
 
   // Parallel fetch for catalog, buyer orders, and recent chat history
   const [productsRes, ordersRes, chatRes] = await Promise.all([
@@ -84,7 +90,7 @@ async function processIncomingWhatsAppMessage(input: ProcessWhatsAppInput) {
       .from('orders')
       .select('*')
       .eq('store_id', store.id)
-      .eq('buyer_phone', cleanPhone)
+      .or(`buyer_phone.eq.${cleanPhone},buyer_phone.eq.${altPhone}`)
       .order('created_at', { ascending: false })
       .limit(3),
     supabase
@@ -100,16 +106,17 @@ async function processIncomingWhatsAppMessage(input: ProcessWhatsAppInput) {
   const recentOrders: any[] = ordersRes.data || []
   const rawHistory: any[] = chatRes.data || []
 
-  // Database-level deduplication: If this exact message was already received and replied to within the last 15 minutes, abort retry
-  if (rawHistory.length > 0 && messageText) {
-    const normalizedIncoming = messageText.trim().toLowerCase()
+  // Database-level deduplication: Handles both text messages and media attachments
+  const normalizedIncoming = (messageText || (mediaUrl ? `[foto:${mediaUrl}]` : '')).trim().toLowerCase()
+  if (rawHistory.length > 0 && normalizedIncoming) {
     const latestMsg = rawHistory[0]
     const recentUserMsg = rawHistory.find((m: any) => m.role === 'user')
     if (recentUserMsg && recentUserMsg.content.trim().toLowerCase() === normalizedIncoming) {
       const msgTime = new Date(recentUserMsg.created_at).getTime()
       const diffMs = Date.now() - msgTime
-      // If received within last 15 minutes and the model already replied, ignore duplicate webhook retry
-      if (diffMs < 15 * 60 * 1000 && latestMsg.role === 'model') {
+      // Guard 1: In-flight concurrent duplicate within 45 seconds
+      // Guard 2: Webhook retry within 10 minutes when reply already exists
+      if (diffMs < 45 * 1000 || (diffMs < 10 * 60 * 1000 && latestMsg.role === 'model')) {
         return {
           reply: '',
           isDuplicate: true,
@@ -210,7 +217,7 @@ ATURAN UTAMA ANDA:
   if (mediaUrl) {
     currentParts.push({ text: `[Pelanggan mengirim file/foto bukti: ${mediaUrl}]` })
   }
-  currentParts.push({ text: messageText || 'Halo' })
+  currentParts.push({ text: messageText || (mediaUrl ? 'Saya mengirimkan foto/bukti pembayaran transfer ini, mohon segera diverifikasi.' : 'Halo') })
 
   contents.push({
     role: 'user',
@@ -333,23 +340,25 @@ ATURAN UTAMA ANDA:
             message: 'Status pesanan berhasil diubah menjadi Lunas (PAID). Siap dipacking oleh penjual.',
           }
         } else {
-          if (recentOrders && recentOrders.length > 0) {
-            const latest = recentOrders[0]
+          const pendingOrder = (recentOrders || []).find((o: any) => o.status === 'PENDING_WA' || o.status === 'PENDING')
+          if (pendingOrder) {
             await supabase.from('orders').update({
               status: 'PAID',
               paid_at: new Date().toISOString(),
               managed_by_ai: true,
               payment_proof_url: mediaUrl || '',
-            }).eq('id', latest.id)
+              seller_internal_note: `Lunas terverifikasi oleh AI WhatsApp: ${fnArgs.payment_notes || 'Bukti bayar terlampir'}`,
+            }).eq('id', pendingOrder.id)
             orderUpdated = true
-            targetOrderCode = latest.order_code
+            targetOrderCode = pendingOrder.order_code
             toolResult = {
               success: true,
-              order_code: latest.order_code,
+              order_code: pendingOrder.order_code,
               new_status: 'PAID',
+              message: 'Status pesanan berhasil diubah menjadi Lunas (PAID). Siap dipacking oleh penjual.',
             }
           } else {
-            toolResult = { success: false, message: 'Pesanan tidak ditemukan' }
+            toolResult = { success: false, message: 'Pesanan tidak ditemukan atau sudah diproses lunas sebelumnya.' }
           }
         }
       }
@@ -411,12 +420,13 @@ ATURAN UTAMA ANDA:
   }
 
   try {
+    const sessionContent = messageText || (mediaUrl ? `[foto:${mediaUrl}]` : '')
     await supabase.from('ai_chat_sessions').insert([
       {
         store_id: store.id,
         buyer_phone: cleanPhone,
         role: 'user',
-        content: messageText || (mediaUrl ? '[Kirim Foto]' : ''),
+        content: sessionContent,
       },
       {
         store_id: store.id,
@@ -466,23 +476,23 @@ function isDuplicateRequest(body: any): boolean {
     return false
   }
 
-  const sender = String(body.sender || body.from || body.phone || '').trim()
-  const message = String(body.message || body.text || '').trim().toLowerCase()
+  const sender = String(body.sender || body.from || body.phone || '').trim().replace(/@.*$/, '').replace(/[^0-9]/g, '')
   const timestamp = String(body.timestamp || '')
-
   if (sender && timestamp) {
     const tsKey = `ts:${sender}:${timestamp}`
     if (processedMessagesCache.has(tsKey)) {
       return true
     }
     processedMessagesCache.set(tsKey, now)
+    return false
   }
 
+  const message = String(body.message || body.text || (body.url ? '[photo]' : '')).trim().toLowerCase()
   if (sender && message) {
     const msgKey = `msg:${sender}:${message}`
     if (processedMessagesCache.has(msgKey)) {
       const lastSeen = processedMessagesCache.get(msgKey) || 0
-      if (now - lastSeen < CACHE_TTL_MS) {
+      if (now - lastSeen < 90000) {
         return true
       }
     }
@@ -534,19 +544,24 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json({ status: 'ignored_no_sender' })
     }
 
-    // 2. Guard: Prevent bot from echoing or responding to its own device messages
-    const cleanSender = sender.replace(/[^0-9]/g, '')
-    const cleanDevice = device.replace(/[^0-9]/g, '')
-    if (cleanDevice && cleanSender === cleanDevice) {
+    // 2. Guard: Prevent bot from replying to WhatsApp Groups (avoids infinite bot-to-bot loops)
+    if (sender.includes('@g.us') || body.member) {
+      return res.status(200).json({ status: 'ignored_group_message' })
+    }
+
+    // 3. Guard: Prevent bot from echoing or responding to its own device messages
+    const cleanSender = sender.replace(/@.*$/, '').replace(/[^0-9]/g, '')
+    const cleanDevice = device.replace(/@.*$/, '').replace(/[^0-9]/g, '')
+    if (cleanDevice && (cleanSender === cleanDevice || cleanSender.endsWith(cleanDevice) || cleanDevice.endsWith(cleanSender))) {
       return res.status(200).json({ status: 'ignored_device_echo' })
     }
 
-    // 3. Guard: Empty message without attachments
+    // 4. Guard: Empty message without attachments
     if (!message && !url) {
       return res.status(200).json({ status: 'ignored_empty_message' })
     }
 
-    // 4. In-memory Deduplication gate
+    // 5. In-memory Deduplication gate
     if (isDuplicateRequest(body)) {
       return res.status(200).json({ status: 'ignored_duplicate_webhook' })
     }

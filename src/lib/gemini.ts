@@ -62,7 +62,13 @@ export async function processIncomingWhatsAppMessage(
     return { reply: 'Terima kasih telah menghubungi kami. Pesan Anda telah kami terima dan akan segera dibalas oleh admin.' }
   }
 
-  const cleanPhone = senderPhone.replace(/[^0-9]/g, '')
+  let cleanPhone = senderPhone.replace(/@.*$/, '').replace(/[^0-9]/g, '')
+  if (cleanPhone.startsWith('0')) {
+    cleanPhone = '62' + cleanPhone.slice(1)
+  } else if (cleanPhone.startsWith('8')) {
+    cleanPhone = '62' + cleanPhone
+  }
+  const altPhone = cleanPhone.startsWith('62') ? '0' + cleanPhone.slice(2) : cleanPhone
 
   // 2. Fetch Catalog, Recent Orders, and Previous Chat History in parallel
   const [productsRes, ordersRes, chatRes] = await Promise.all([
@@ -75,7 +81,7 @@ export async function processIncomingWhatsAppMessage(
       .from('orders')
       .select('*')
       .eq('store_id', store.id)
-      .eq('buyer_phone', cleanPhone)
+      .or(`buyer_phone.eq.${cleanPhone},buyer_phone.eq.${altPhone}`)
       .order('created_at', { ascending: false })
       .limit(3),
     supabase
@@ -91,15 +97,15 @@ export async function processIncomingWhatsAppMessage(
   const recentOrders: any[] = ordersRes.data || []
   const rawHistory: any[] = chatRes.data || []
 
-  // Database-level deduplication: If this exact message was already replied to in the last 15 minutes, abort retry
-  if (rawHistory.length > 0 && messageText) {
-    const normalizedIncoming = messageText.trim().toLowerCase()
+  // Database-level deduplication: Handles both text messages and media attachments
+  const normalizedIncoming = (messageText || (mediaUrl ? `[foto:${mediaUrl}]` : '')).trim().toLowerCase()
+  if (rawHistory.length > 0 && normalizedIncoming) {
     const latestMsg = rawHistory[0]
     const recentUserMsg = rawHistory.find((m: any) => m.role === 'user')
     if (recentUserMsg && recentUserMsg.content.trim().toLowerCase() === normalizedIncoming) {
       const msgTime = new Date(recentUserMsg.created_at).getTime()
       const diffMs = Date.now() - msgTime
-      if (diffMs < 15 * 60 * 1000 && latestMsg.role === 'model') {
+      if (diffMs < 45 * 1000 || (diffMs < 10 * 60 * 1000 && latestMsg.role === 'model')) {
         return {
           reply: '',
           isDuplicate: true,
@@ -216,7 +222,7 @@ ATURAN UTAMA ANDA:
   if (mediaUrl) {
     currentParts.push({ text: `[Pelanggan mengirim file/foto bukti: ${mediaUrl}]` })
   }
-  currentParts.push({ text: messageText || 'Halo' })
+  currentParts.push({ text: messageText || (mediaUrl ? 'Saya mengirimkan foto/bukti pembayaran transfer ini, mohon segera diverifikasi.' : 'Halo') })
 
   contents.push({
     role: 'user',
@@ -338,23 +344,25 @@ ATURAN UTAMA ANDA:
             message: 'Status pesanan berhasil diubah menjadi Lunas (PAID). Siap dipacking oleh penjual.',
           }
         } else {
-          if (recentOrders && recentOrders.length > 0) {
-            const latest = recentOrders[0]
+          const pendingOrder = (recentOrders || []).find((o: any) => o.status === 'PENDING_WA' || o.status === 'PENDING')
+          if (pendingOrder) {
             await supabase.from('orders').update({
               status: 'PAID',
               paid_at: new Date().toISOString(),
               managed_by_ai: true,
               payment_proof_url: mediaUrl || '',
-            }).eq('id', latest.id)
+              seller_internal_note: `Lunas terverifikasi oleh AI WhatsApp: ${fnArgs.payment_notes || 'Bukti bayar terlampir'}`,
+            }).eq('id', pendingOrder.id)
             orderUpdated = true
-            targetOrderCode = latest.order_code
+            targetOrderCode = pendingOrder.order_code
             toolResult = {
               success: true,
-              order_code: latest.order_code,
+              order_code: pendingOrder.order_code,
               new_status: 'PAID',
+              message: 'Status pesanan berhasil diubah menjadi Lunas (PAID). Siap dipacking oleh penjual.',
             }
           } else {
-            toolResult = { success: false, message: 'Pesanan tidak ditemukan' }
+            toolResult = { success: false, message: 'Pesanan tidak ditemukan atau sudah diproses lunas sebelumnya.' }
           }
         }
       }
@@ -396,12 +404,13 @@ ATURAN UTAMA ANDA:
 
   // 6. Save Chat History to Supabase
   try {
+    const sessionContent = messageText || (mediaUrl ? `[foto:${mediaUrl}]` : '')
     await supabase.from('ai_chat_sessions').insert([
       {
         store_id: store.id,
         buyer_phone: cleanPhone,
         role: 'user',
-        content: messageText || (mediaUrl ? '[Kirim Foto]' : ''),
+        content: sessionContent,
       },
       {
         store_id: store.id,
