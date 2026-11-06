@@ -34,7 +34,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', initialSlug
 
     try {
       if (isLogin) {
-        const res = await login(email || 'merchant@tautan.site', password)
+        const res = await login(email || 'merchant@tautan.ai', password)
         onClose()
         if (res?.isOnboarded) {
           navigate('/dashboard')
@@ -43,7 +43,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', initialSlug
         }
       } else {
         const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '') || 'tokoku'
-        await signup(email || 'merchant@tautan.site', password, cleanSlug)
+        await signup(email || 'merchant@tautan.ai', password, cleanSlug)
         onClose()
         navigate('/onboarding')
       }
@@ -136,7 +136,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signup', initialSlug
                 Klaim Tautan Toko Anda
               </label>
               <div className="flex items-center rounded-lg bg-canvas border border-hairline focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 overflow-hidden px-3">
-                <span className="text-xs text-muted font-mono select-none">tautan.site/</span>
+                <span className="text-xs text-muted font-mono select-none">tautanAI/</span>
                 <input
                   type="text"
                   required

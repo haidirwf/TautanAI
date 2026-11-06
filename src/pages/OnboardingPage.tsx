@@ -124,7 +124,7 @@ export function OnboardingPage() {
         tagline: savedStore.tagline,
       })
 
-      toast.success('Toko Siap Digunakan!', 'Selamat datang di dashboard bisnis tautan.site Anda.')
+      toast.success('Toko Siap Digunakan!', 'Selamat datang di dashboard bisnis tautanAI Anda.')
       navigate('/dashboard', { replace: true })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Terjadi kendala saat menyimpan data toko.'
@@ -216,7 +216,7 @@ export function OnboardingPage() {
                 <span className="text-primary">*</span>
               </label>
               <div className="flex items-center rounded-xl bg-canvas border border-hairline focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 overflow-hidden px-3.5 transition-all">
-                <span className="text-xs text-muted font-mono select-none">tautan.site/</span>
+                <span className="text-xs text-muted font-mono select-none">tautanAI/</span>
                 <input
                   type="text"
                   required
@@ -296,7 +296,7 @@ export function OnboardingPage() {
 
       {/* Footer */}
       <div className="text-center pt-6 text-[11px] text-muted">
-        <span>tautan.site &bull; Platform Link-in-Bio & Etalase WhatsApp</span>
+        <span>tautanAI &bull; Platform Link-in-Bio & Etalase WhatsApp</span>
       </div>
     </div>
   )

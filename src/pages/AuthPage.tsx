@@ -37,7 +37,7 @@ export function AuthPage() {
 
     try {
       if (isLogin) {
-        const res = await login(email || 'merchant@tautan.site', password)
+        const res = await login(email || 'merchant@tautan.ai', password)
         if (res?.isOnboarded) {
           navigate('/dashboard')
         } else {
@@ -45,7 +45,7 @@ export function AuthPage() {
         }
       } else {
         const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '') || 'tokoku'
-        await signup(email || 'merchant@tautan.site', password, cleanSlug)
+        await signup(email || 'merchant@tautan.ai', password, cleanSlug)
         navigate('/onboarding')
       }
     } catch (err: unknown) {
@@ -149,7 +149,7 @@ export function AuthPage() {
                   Klaim Tautan Toko Anda
                 </label>
                 <div className="flex items-center rounded-lg bg-canvas border border-hairline focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 overflow-hidden px-3">
-                  <span className="text-xs text-muted font-mono select-none">tautan.site/</span>
+                  <span className="text-xs text-muted font-mono select-none">tautanAI/</span>
                   <input
                     type="text"
                     required

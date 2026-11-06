@@ -192,7 +192,7 @@ export const api = {
 
         if (error) {
           if (error.code === '23505' || error.message?.includes('slug')) {
-            throw new Error(`Tautan 'tautan.site/${cleanSlug}' sudah dipakai toko lain. Silakan gunakan variasi nama lain.`)
+            throw new Error(`Tautan 'tautanAI/${cleanSlug}' sudah dipakai toko lain. Silakan gunakan variasi nama lain.`)
           }
           throw error
         }
@@ -215,7 +215,7 @@ export const api = {
 
         if (error) {
           if (error.code === '23505' || error.message?.includes('slug')) {
-            throw new Error(`Tautan 'tautan.site/${cleanSlug}' sudah dipakai toko lain. Silakan gunakan variasi nama lain.`)
+            throw new Error(`Tautan 'tautanAI/${cleanSlug}' sudah dipakai toko lain. Silakan gunakan variasi nama lain.`)
           }
           throw error
         }
@@ -792,7 +792,7 @@ export const api = {
           }\nStatus saat ini:\n🚚 *DALAM PENGIRIMAN (SHIPPED)*\n\nMohon ditunggu kedatangan paketnya ya Kak.\n\nTerima kasih banyak! 🙏`
           break
         case 'COMPLETED':
-          messageText = `Halo Kak *${buyerName}*! 🎉\n\nPesanan Kakak:\n📋 Kode: *#${orderDisplayCode}*\n\nTelah dinyatakan:\n✅ *SELESAI (COMPLETED)*\n\nTerima kasih banyak telah berbelanja di *${storeName}*! Semoga produk yang diterima memuaskan dan bermanfaat ya Kak.\n\nJika Kakak berkenan, kami sangat menghargai ulasan di etalase kami:\n⭐ https://tautan.site/${store?.slug || ''}\n\nSampai jumpa di pesanan berikutnya! 🙏`
+          messageText = `Halo Kak *${buyerName}*! 🎉\n\nPesanan Kakak:\n📋 Kode: *#${orderDisplayCode}*\n\nTelah dinyatakan:\n✅ *SELESAI (COMPLETED)*\n\nTerima kasih banyak telah berbelanja di *${storeName}*! Semoga produk yang diterima memuaskan dan bermanfaat ya Kak.\n\nJika Kakak berkenan, kami sangat menghargai ulasan di etalase kami:\n⭐ tautanAI/${store?.slug || ''}\n\nSampai jumpa di pesanan berikutnya! 🙏`
           break
         case 'PAID':
           messageText = `Halo Kak *${buyerName}*! 🙏\n\nPembayaran pesanan Kakak telah berhasil diverifikasi oleh tim *${storeName}*:\n📋 Kode Pesanan: *#${orderDisplayCode}*\n💰 Total Tagihan: *Rp${Number(order.total_amount || order.subtotal).toLocaleString('id-ID')}*\n\nStatus saat ini:\n✅ *LUNAS (PAID)*\n\nPesanan Kakak akan segera masuk ke tahap pemrosesan dan pengemasan. Terima kasih banyak! 😊`

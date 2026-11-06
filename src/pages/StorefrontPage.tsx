@@ -65,7 +65,7 @@ export function StorefrontPage() {
       <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-4 text-center">
         <h2 className="font-sans text-2xl sm:text-3xl font-bold text-ink">Toko Tidak Ditemukan</h2>
         <p className="text-sm text-muted mt-2">
-          Toko dengan tautan <code className="font-mono text-primary">tautan.site/{storeSlug}</code> belum terdaftar.
+          Toko dengan tautan <code className="font-mono text-primary">tautanAI/{storeSlug}</code> belum terdaftar.
         </p>
       </div>
     )
@@ -104,7 +104,7 @@ export function StorefrontPage() {
             </p>
             {store.whatsapp_number && (
               <a
-                href={`https://wa.me/${store.whatsapp_number}?text=${encodeURIComponent(`Halo ${store.name}, saya melihat toko Anda di tautan.site/${storeSlug}. Mau tanya apakah ada info produk terbaru?`)}`}
+                href={`https://wa.me/${store.whatsapp_number}?text=${encodeURIComponent(`Halo ${store.name}, saya melihat toko Anda di tautanAI/${storeSlug}. Mau tanya apakah ada info produk terbaru?`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-5 inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-2xs transition-all cursor-pointer"

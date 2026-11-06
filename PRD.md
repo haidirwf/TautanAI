@@ -16,8 +16,8 @@ Indonesian small-and-medium businesses (SMBs) and independent online sellers fac
 3. **Disorganized Order Tracking**: Manual WhatsApp deals lack centralized inventory synchronization, standardized customer records, and financial analytics.
 
 ### Proposed Solution
-**tautan.site** is an all-in-one multi-tenant commerce platform combining:
-1. **Interactive Link-in-Bio Micro-Catalogue Storefront**: Mobile-first digital storefront (`tautan.site/:slug`) with category filtering, variant pricing, and direct WhatsApp checkout with **0% transaction fees**.
+**tautanAI** is an all-in-one multi-tenant commerce platform combining:
+1. **Interactive Link-in-Bio Micro-Catalogue Storefront**: Mobile-first digital storefront (`tautanAI/:slug`) with category filtering, variant pricing, and direct WhatsApp checkout with **0% transaction fees**.
 2. **Autonomous WhatsApp AI Agent Copilot (`/api/whatsapp`)**: Integrated with **Google Gemini** and **Fonnte WhatsApp Gateway**, the autonomous agent answers buyer questions 24/7, checks catalog availability, automatically creates order drafts, and detects/verifies bank transfer receipts from uploaded images.
 3. **Fintech-Grade Merchant Financial Dashboard (`/dashboard`)**: Provides high-end financial metrics (Settled Revenue, Pending Pipeline, AOV, Conversion Rates, and Trajectory Charts) offering enterprise payment gateway clarity while maintaining frictionless WhatsApp commerce.
 

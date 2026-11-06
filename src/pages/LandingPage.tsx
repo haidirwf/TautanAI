@@ -155,7 +155,7 @@ export function LandingPage() {
       navigate('/dashboard')
       return
     }
-    signup('penjual@tautan.site', clean)
+    signup('penjual@tautan.ai', clean)
     navigate('/dashboard')
   }
 
@@ -165,11 +165,11 @@ export function LandingPage() {
 
   const faqItems = [
     {
-      q: 'Apa perbedaan tautan.site dengan link bio biasa seperti Linktree?',
-      a: 'Link bio biasa hanya menampilkan tombol tautan pasif. tautan.site menggabungkan etalase belanja visual, checkout WhatsApp berformat rapi (0% komisi), dan Asisten AI 24/7 yang otomatis menjawab pertanyaan stok, membuat pesanan resmi, hingga memverifikasi bukti transfer tanpa campur tangan manual.',
+      q: 'Apa perbedaan tautanAI dengan link bio biasa seperti Linktree?',
+      a: 'Link bio biasa hanya menampilkan tombol tautan pasif. tautanAI menggabungkan etalase belanja visual, checkout WhatsApp berformat rapi (0% komisi), dan Asisten AI 24/7 yang otomatis menjawab pertanyaan stok, membuat pesanan resmi, hingga memverifikasi bukti transfer tanpa campur tangan manual.',
     },
     {
-      q: 'Bagaimana cara kerja Asisten AI WhatsApp di tautan.site?',
+      q: 'Bagaimana cara kerja Asisten AI WhatsApp di tautanAI?',
       a: 'Asisten AI terhubung langsung ke nomor WhatsApp toko Anda via Fonnte Gateway dan bertenaga Google Gemini. AI membaca data katalog, varian harga, dan catatan khusus produk Anda secara real-time. Saat pembeli bertanya, memesan, atau mengirim foto struk transfer, AI langsung merespons dan memperbarui data di dashboard toko.',
     },
     {
@@ -213,7 +213,7 @@ export function LandingPage() {
                 className="p-1.5 rounded-full border border-[#e6dfd8] bg-white shadow-xs flex items-center gap-2 focus-within:border-[#cc785c] focus-within:ring-2 focus-within:ring-[#cc785c]/20 transition-all hover:border-[#cc785c]/60"
               >
                 <div className="flex items-center pl-4 pr-1 text-xs sm:text-sm text-[#8c867b] font-mono select-none font-semibold">
-                  tautan.site/
+                  tautanAI/
                 </div>
                 <input
                   type="text"
@@ -262,7 +262,7 @@ export function LandingPage() {
                     </div>
                     <div>
                       <h2 className="font-extrabold text-sm text-[#141413]">Kedai Kopi Senja</h2>
-                      <span className="text-xs font-mono text-[#8c867b]">tautan.site/senja</span>
+                      <span className="text-xs font-mono text-[#8c867b]">tautanAI/senja</span>
                     </div>
                   </div>
                   <div className="px-2.5 py-1 rounded-md bg-[#faf4ed] text-[#8c4327] border border-[#cc785c]/25 text-[11px] font-semibold flex items-center gap-1.5 shrink-0">
@@ -481,7 +481,7 @@ export function LandingPage() {
               </div>
 
               <div className="mt-6 flex items-center justify-between text-xs font-mono text-[#8c867b] border-t border-[#e6dfd8] pt-3">
-                <span>tautan.site/namatokomu</span>
+                <span>tautanAI/namatokomu</span>
                 <span className="text-[#cc785c] font-bold">Siap Disematkan di Bio</span>
               </div>
             </div>
@@ -512,7 +512,7 @@ export function LandingPage() {
                 {
                   num: '01',
                   title: 'Klaim Tautan & Sambung WA',
-                  desc: 'Pilih nama tokomu di tautan.site/namamu dan sambungkan nomor WhatsApp tokomu dalam waktu kurang dari 1 menit.',
+                  desc: 'Pilih nama tokomu di tautanAI/namamu dan sambungkan nomor WhatsApp tokomu dalam waktu kurang dari 1 menit.',
                 },
                 {
                   num: '02',
@@ -679,7 +679,7 @@ export function LandingPage() {
         </div>
 
         <div className="max-w-6xl mx-auto mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between text-[11px] text-[#8c867b]">
-          <span>© 2026 tautan.site. Didedikasikan untuk pelaku usaha mandiri & kreator Indonesia.</span>
+          <span>© 2026 tautanAI. Didedikasikan untuk pelaku usaha mandiri & kreator Indonesia.</span>
           <span className="font-medium text-[#141413]">0% Potongan Komisi</span>
         </div>
       </footer>

@@ -190,7 +190,7 @@ export function SettingsPage() {
                 <span>Tautan URL Toko</span>
               </label>
               <div className="flex items-center rounded-lg bg-white border border-[#e8e2d9] px-3 focus-within:border-[#cc785c] focus-within:ring-1 focus-within:ring-[#cc785c] shadow-2xs">
-                <span className="text-xs text-[#8c867b] font-mono select-none">tautan.site/</span>
+                <span className="text-xs text-[#8c867b] font-mono select-none">tautanAI/</span>
                 <input
                   type="text"
                   required

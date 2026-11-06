@@ -51,7 +51,7 @@ export function DashboardPage() {
   const storeId = user?.storeId || ''
   const storeName = user?.name || 'Toko Saya'
   const storeSlug = user?.storeSlug || ''
-  const storeUrl = storeSlug ? `tautan.site/${storeSlug}` : 'tautan.site'
+  const storeUrl = storeSlug ? `tautanAI/${storeSlug}` : 'tautanAI'
 
   useEffect(() => {
     if (authLoading) return
@@ -192,7 +192,7 @@ export function DashboardPage() {
             {/* Quick Public URL Pill with Copy button */}
             <div className="flex-1 sm:flex-initial flex items-center justify-between sm:justify-start gap-2 h-9 px-3 rounded-lg bg-white border border-[#e8e2d9] text-xs text-[#5c5850] shadow-2xs">
               <span className="font-mono text-xs text-[#706c64]">
-                tautan.site/{storeSlug}
+                tautanAI/{storeSlug}
               </span>
               <button
                 type="button"
