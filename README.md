@@ -2,33 +2,35 @@
   <img src="public/vite.svg" alt="tautan.site Logo" width="100" height="100" />
 
   # tautan.site
-  **Open Source Link-in-Bio & Micro-Catalogue Storefront Platform for Indonesian SMBs**
+  **Autonomous AI-Powered WhatsApp Commerce & Micro-Catalogue Storefront for Indonesian SMBs**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](package.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![React 19](https://img.shields.io/badge/React-19.0-61DAFB?style=flat&logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6.1-646CFF?style=flat&logo=vite)](https://vitejs.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
+[![Google Gemini AI](https://img.shields.io/badge/Google_Gemini-3.1_Flash--Lite-4285F4?style=flat&logo=google)](https://ai.google.dev/)
+[![Fonnte](https://img.shields.io/badge/WhatsApp-Fonnte_Gateway-25D366?style=flat&logo=whatsapp)](https://fonnte.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Auth_%26_DB-3ECF8E?style=flat&logo=supabase)](https://supabase.com/)
 
 </div>
 
 <br />
 
-**tautan.site** is an ultra-fast, modern, open-source multi-tenant platform designed for Indonesian small-and-medium businesses (SMBs), independent online sellers, and creator-merchants. It seamlessly unites a social link-in-bio profile with an interactive micro-catalogue storefront, direct WhatsApp checkout with **0% transaction fees**, and a professional fintech-grade merchant dashboard to manage orders, catalog inventory, customer relationships, and financial analytics.
+**tautan.site** is a modern, open-source multi-tenant platform designed for Indonesian small-and-medium businesses (SMBs), independent online sellers, and creator-merchants. It unites a social link-in-bio profile with an interactive micro-catalogue storefront, direct WhatsApp checkout with **0% transaction fees**, a professional fintech-grade merchant dashboard, and an **Autonomous 24/7 WhatsApp AI Agent Copilot** powered by **Google Gemini** and **Fonnte** to automatically answer buyer inquiries, draft orders, and verify bank transfer payments in real time.
 
 ---
 
 ## Table of Contents
 
 - [Key Features](#-key-features)
+- [Autonomous WhatsApp AI Copilot](#-autonomous-whatsapp-ai-copilot)
 - [Architecture & Technology Stack](#-architecture--technology-stack)
 - [System Requirements](#-system-requirements)
 - [Local Installation & Setup](#-local-installation--setup)
 - [Project Directory Structure](#-project-directory-structure)
-- [Security Hardening](#-security-hardening)
+- [Security Hardening & Resilience](#-security-hardening--resilience)
 - [Deployment Guide](#-deployment-guide)
 - [Contributing](#-contributing)
 - [License](#-license)
@@ -38,30 +40,73 @@
 ## Key Features
 
 - **Instant Storefront & Onboarding (`tautan.site/:slug`):** Launch a personalized, high-conversion storefront in seconds with custom brand avatar, bio, and social links.
+- **Autonomous WhatsApp AI Sales Agent:** 24/7 AI Copilot powered by Google Gemini handles buyer chat conversations, checks catalog inventory, recommends products, creates order drafts, and verifies payment receipts directly inside WhatsApp.
 - **Direct WhatsApp Checkout (0% Fees):** No third-party payment gateway cuts. The frictionless shopping cart formats orders into clean, ready-to-send WhatsApp messages directly to the seller's active WhatsApp number.
-- **Fluid Multi-Step Cart & Morphing Modal:** Interactive modal with smooth width & height spring extension animations when advancing from shopping cart to customer delivery and payment confirmation.
-- **Fintech-Style Financial Dashboard (`/dashboard`):** Real-time tracking of settled gross revenue, pending WhatsApp pipeline, average order value (AOV), and conversion rates with interactive monthly & weekly revenue charts.
-- **Manual Order Lifecycle Control (`/orders`):** Full control over order statuses (`PENDING_WA`, `PAID`, `PROCESSING`, `SHIPPED`, `COMPLETED`, `CANCELLED`) with direct 1-tap buyer follow-up via WhatsApp.
-- **Product & Variant Inventory Management (`/katalog`):** Comprehensive catalog CRUD supporting categories, stock counters, variant groups (e.g. Size, Color), and price delta adjustments (`priceDelta`).
+- **Automated Payment & Proof Verification:** Buyers can upload or send transfer receipt screenshots via WhatsApp. The AI autonomously matches the payment, tags seller notes, and flips the order status from `PENDING_WA` to `PAID` instantly.
+- **Fluid Multi-Step Cart & Morphing Drawer:** Interactive shopping cart with smooth spring physics when advancing from product selection to delivery information and confirmation.
+- **Fintech-Style Financial Dashboard (`/dashboard`):** Real-time tracking of settled gross revenue, pending WhatsApp pipeline, average order value (AOV), and conversion rates with interactive revenue trajectory charts.
+- **Comprehensive Order Lifecycle Control (`/orders`):** Full visibility into orders with AI management tags (`managed_by_ai`), payment proof inspection, tracking number inputs, and 1-tap WhatsApp buyer actions.
+- **Product & Variant Inventory Management (`/katalog`):** Complete catalog CRUD supporting categories, stock counters, variant groups (e.g. Size, Color), price deltas, and custom **AI Context Notes** for guiding the AI agent.
 - **Customer CRM & Insights (`/pelanggan`):** Automatically aggregates customer records, order counts, lifetime spending (LTV), and last order dates with instant WhatsApp contact actions.
 - **Buyer Reviews & Social Proof (`/ulasan`):** Integrated post-checkout buyer rating and review collection system displayed within the merchant dashboard.
 - **Sales & Financial Reports (`/laporan`):** In-depth breakdown of verified revenue, WhatsApp conversion pipelines, and payment settlement records.
-- **cPanel & Static Hosting Ready:** Ultra-lightweight static bundle build optimized for instant delivery on standard cPanel Apache hosting, Vercel, Netlify, or Cloudflare Pages.
+- **cPanel, Vercel & Static Hosting Ready:** Ultra-lightweight static frontend bundle paired with edge/serverless webhook endpoints for WhatsApp automation.
+
+---
+
+## Autonomous WhatsApp AI Copilot
+
+The platform features an autonomous AI commerce copilot located at `api/whatsapp.ts` that connects the merchant's store directly to WhatsApp via the [Fonnte](https://fonnte.com) gateway:
+
+### How It Works
+
+```text
+[ Buyer on WhatsApp ]
+       │
+       ▼ (Sends text or payment proof photo)
+[ Fonnte Gateway ]
+       │
+       ▼ HTTP POST Webhook
+[ /api/whatsapp (Vercel Serverless) ]
+       │
+       ├── 1. In-Memory & Database Deduplication Guard (Prevents retry loops)
+       ├── 2. Parallel Context Retrieval (Store, Active Products, Orders, Chat History)
+       ├── 3. Google Gemini REST API (with Autonomous Function Calling)
+       │       ├── Tool: check_stock (Verify inventory & variants)
+       │       ├── Tool: create_order_draft (Drafts new order into Supabase)
+       │       └── Tool: confirm_buyer_payment (Verifies transfer proof -> Sets PAID)
+       ├── 4. Log Session to PostgreSQL (ai_chat_sessions)
+       │
+       ▼ Outbound Reply via https://api.fonnte.com/send
+[ Buyer Receives Immediate WhatsApp Response ]
+```
+
+### Configurable AI Store Settings (`/settings`)
+Merchants have full autonomous control over their AI Copilot:
+- **Toggle AI Copilot:** Turn autonomous WhatsApp customer assistance on/off with one switch.
+- **Fonnte Device Token:** Connect any WhatsApp number via QR scan at fonnte.com.
+- **Brand Persona & Tone:** Define how the AI greets and talks with buyers (e.g., warm Balinese hospitality, formal boutique, or casual streetwear).
+- **Custom Operational Instructions:** Provide specific store rules, promo codes, delivery policies, or FAQs.
+- **Payment & Bank Instructions:** Set BCA, Mandiri, BRI, or QRIS instructions dispatched automatically when orders are finalized.
+- **Model Selection:** Choose between `gemini-3.1-flash-lite`, `gemini-3.8-flash`, or custom models.
+- **Product AI Context:** Add custom selling notes to individual catalog items that the AI references during customer questions.
 
 ---
 
 ## Architecture & Technology Stack
 
-**tautan.site** is built with modern, battle-tested technologies for maximum performance, responsiveness, and maintainability:
+**tautan.site** is built for maximum speed, responsiveness, and zero-maintenance reliability:
 
 - **Frontend Core:** [React 19](https://react.dev/) + [Vite 6](https://vitejs.dev/) Single Page Application (SPA).
 - **Type Safety:** [TypeScript 5.7](https://www.typescriptlang.org/) for robust end-to-end interface contracts.
+- **AI Engine:** [Google Gemini API](https://ai.google.dev/) (`gemini-3.1-flash-lite`) with function calling tools and conversation history memory.
+- **WhatsApp Gateway:** [Fonnte API](https://fonnte.com/) for bidirectional message dispatch and media webhook reception.
 - **Styling & Design System:** [Tailwind CSS v3.4](https://tailwindcss.com/) with an editorial warm cream canvas palette, serif typography hierarchy, and accessible contrast ratios.
 - **State Management:** [Zustand](https://github.com/pmndrs/zustand) with persistent local storage hydration for cart and authentication sessions.
 - **Micro-Animations & Physics:** [Motion](https://motion.dev/) (Framer Motion v13) for fluid spring physics, dynamic modal height transitions, and interactive UI feedback.
 - **Routing:** [React Router v7](https://reactrouter.com/) for fast client-side navigation.
-- **Icons:** [Lucide React](https://lucide.dev/) for crisp, scalable UI icons.
 - **Backend & Database:** [Supabase](https://supabase.com/) (PostgreSQL 15, Supabase Auth with automated JWT refresh, and Row Level Security).
+- **Serverless Automation:** Vercel Serverless Functions (`api/whatsapp.ts`) for processing asynchronous WhatsApp webhooks.
 
 ---
 
@@ -72,6 +117,8 @@ Before running the project locally, ensure you have:
 - [Node.js](https://nodejs.org/) v18.0.0 or higher (or [Bun](https://bun.sh/) / [pnpm](https://pnpm.io/))
 - npm v9+ or equivalent package manager
 - A [Supabase](https://supabase.com/) project (free tier is fully sufficient)
+- A [Google AI Studio Gemini API Key](https://aistudio.google.com/) (for AI Copilot features)
+- A [Fonnte](https://fonnte.com/) account and device token (optional for WhatsApp testing)
 
 ---
 
@@ -98,21 +145,26 @@ Duplicate the template environment file:
 cp .env.example .env
 ```
 
-Open `.env` and fill in your Supabase project credentials:
+Open `.env` and fill in your credentials:
 
 ```env
 # Supabase Configuration
 VITE_SUPABASE_URL=https://your-project-id.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-```
 
-*(Note: If Supabase credentials are not provided during initial exploration, the app falls back to local storage mock data).*
+# Google Gemini AI Configuration
+VITE_GEMINI_API_KEY=your-gemini-api-key
+VITE_GEMINI_MODEL=gemini-3.1-flash-lite
+
+# Fonnte WhatsApp Gateway Configuration
+FONNTE_TOKEN=your-fonnte-token-here
+```
 
 ### 4. Database Setup (Supabase)
 
 1. Open your Supabase Project Dashboard.
 2. Navigate to the **SQL Editor**.
-3. Copy and run the contents of [`supabase/schema.sql`](supabase/schema.sql) to set up tables (`stores`, `products`, `orders`, `categories`, `store_links`, `reviews`) and Row Level Security (RLS) policies.
+3. Copy and run the contents of [`supabase/schema.sql`](supabase/schema.sql) to set up tables (`stores`, `products`, `orders`, `categories`, `store_links`, `reviews`, `ai_chat_sessions`) and Row Level Security (RLS) policies.
 
 ### 5. Run Development Server
 
@@ -136,6 +188,8 @@ The production-ready static assets will be compiled into the `dist/` directory.
 
 ```text
 tautan.site/
+├── api/
+│   └── whatsapp.ts           # Autonomous WhatsApp AI Webhook & Fonnte Dispatcher
 ├── public/
 │   ├── .htaccess             # Apache rewrite rules for SPA client routing on cPanel
 │   └── vite.svg              # Brand icon
@@ -150,6 +204,7 @@ tautan.site/
 │   │   ├── storefront/       # Public store components (ProductCard, CartDrawer)
 │   │   └── ui/               # Base UI primitives (Button, Modal, Toaster)
 │   ├── lib/
+│   │   ├── gemini.ts         # Autonomous AI Processing Engine & Function Calling logic
 │   │   ├── supabase.ts       # Supabase client, data access layer & mock fallback
 │   │   └── utils.ts          # Currency formatter, order code generator, WhatsApp formatter
 │   ├── pages/
@@ -162,7 +217,7 @@ tautan.site/
 │   │   ├── OrdersPage.tsx    # Order pipeline & status management
 │   │   ├── ReportsPage.tsx   # Detailed financial & conversion reports
 │   │   ├── ReviewsPage.tsx   # Buyer rating & review management
-│   │   ├── SettingsPage.tsx  # Store profile & WhatsApp settings
+│   │   ├── SettingsPage.tsx  # Store profile, Fonnte & AI Persona settings
 │   │   └── StorefrontPage.tsx# Public link-in-bio & micro-catalogue
 │   ├── store/
 │   │   ├── useAuthStore.ts   # Merchant auth state & session persistence
@@ -175,9 +230,11 @@ tautan.site/
 │   └── main.tsx              # Application entrypoint
 ├── supabase/
 │   └── schema.sql            # PostgreSQL schema, indexes, and RLS policies
+├── vercel.json               # Serverless API routing specification
 ├── .cpanel.yml               # Automated cPanel deployment specification
 ├── .env.example              # Environment variables template
 ├── LICENSE                   # MIT License
+├── PRD.md                    # Product Requirements Document
 ├── SECURITY.md               # Security & vulnerability reporting policy
 ├── tailwind.config.js        # Design tokens & color configuration
 ├── tsconfig.json             # TypeScript compiler settings
@@ -186,33 +243,44 @@ tautan.site/
 
 ---
 
-## Security Hardening
+## Security Hardening & Resilience
 
-**tautan.site** implements essential security measures to protect merchants and buyers:
+**tautan.site** implements multi-layered security and operational resilience:
 
+- **Dual-Layer Webhook Deduplication:** Combines an in-memory sliding cache (15-minute TTL) with database-level verification in `ai_chat_sessions` to eliminate duplicate message processing and prevent Fonnte 15-retry loops.
+- **Concurrent In-Flight Lock:** Fast 45-second debounce ensures that duplicate webhook requests arriving simultaneously across different serverless instances cannot trigger double replies.
+- **Group Isolation & Anti-Looping:** Webhook handlers immediately drop group messages (`@g.us`) and device self-echos to prevent infinite bot ping-pong loops.
+- **Guaranteed HTTP 200 Acknowledgment:** The webhook endpoint consistently returns HTTP 200 status codes for unhandled non-message events, status reports, and errors to prevent external retry floods.
 - **Row Level Security (RLS):** All Supabase database tables enforce strict RLS policies. Merchants can only read and mutate their own store records, catalog items, and financial data.
-- **Client-Safe Authentication:** Authentication is handled directly through Supabase Auth using client-safe anonymous keys with secure short-lived JWT tokens and automated refresh loops.
-- **Robust WhatsApp URL Formatting:** WhatsApp order templates use clean, universally supported WhatsApp markdown formatting (`*Pesanan:*`, `*Nama:*`, `- 1x...`) and direct API endpoints to prevent 4-byte Unicode encoding corruption (`?` characters) during browser redirects.
-- **Input Sanitization & Normalization:** Indonesian phone numbers are automatically sanitized and normalized to the standard international format (`628...`) to prevent malformed messaging links.
-- **Safe Local Storage Scoping:** Persistent merchant session tokens and cart records are namespaced and sanitized to prevent cross-account pollution.
+- **Phone Number Normalization:** Standardizes Indonesian numbers across formats (`08...`, `8...`, `628...`) to ensure seamless order lookups and communication consistency.
 
 ---
 
 ## Deployment Guide
 
-### Deploying to cPanel (Shared Hosting)
+### Deploying to Vercel (Recommended for Full AI Automation)
+
+1. Connect your repository to Vercel.
+2. Ensure the build configuration is set to:
+   - **Framework Preset:** Vite
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+3. Add Environment Variables in Vercel Project Settings:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (optional, for administrative webhook writes)
+   - `VITE_GEMINI_API_KEY`
+   - `VITE_GEMINI_MODEL` (e.g. `gemini-3.1-flash-lite`)
+   - `FONNTE_TOKEN`
+4. Set your Webhook URL in the Fonnte Device Settings to:
+   `https://your-domain.vercel.app/api/whatsapp`
+5. Turn **Auto Read** to **On** in your Fonnte dashboard.
+
+### Deploying to cPanel (Shared Hosting for Frontend)
 
 1. Run `npm run build` locally or through CI/CD.
 2. Upload the contents of the `dist/` directory directly to your `public_html/` (or subdomain folder).
 3. The included `public/.htaccess` automatically ensures that client-side SPA routes (e.g. `/dashboard`, `/:slug`) resolve properly through `index.html`.
-4. Alternatively, use the included `.cpanel.yml` file for Git Version Control automatic deployment in cPanel.
-
-### Deploying to Vercel / Netlify / Cloudflare Pages
-
-- **Framework Preset:** Vite
-- **Build Command:** `npm run build`
-- **Output Directory:** `dist`
-- **Environment Variables:** Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 
 ---
 
@@ -236,8 +304,4 @@ This project is licensed under the **[MIT License](LICENSE)**.
 
 ```text
 Copyright (c) 2026 tautan.site contributors
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction...
 ```
