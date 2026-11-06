@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { MessageCircle, Save, MapPin, Bot, ExternalLink, Image as ImageIcon } from 'lucide-react'
 import type { Order, OrderStatus } from '@/types'
-import { formatIDR, sanitizeWhatsApp } from '@/lib/utils'
+import { formatIDR, sanitizeWhatsApp, getOrderPaymentSenderInfo } from '@/lib/utils'
 import { api } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -31,8 +31,9 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
       setStatus(order.status)
       setShippingFee(order.shipping_fee || 0)
       setPaymentMethod(order.payment_method || 'Transfer BCA')
-      setPaymentSenderName(order.payment_sender_name || '')
-      setPaymentSenderAccount(order.payment_sender_account || '')
+      const { name: senderName, account: senderAccount } = getOrderPaymentSenderInfo(order)
+      setPaymentSenderName(senderName)
+      setPaymentSenderAccount(senderAccount)
       setCourierName(order.courier_name || '')
       setTrackingNumber(order.tracking_number || '')
       setSellerNote(order.seller_internal_note || '')

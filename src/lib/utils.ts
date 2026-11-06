@@ -42,6 +42,24 @@ export function generateOrderCode(): string {
   return `#ORD-${year}${month}${day}-${randomSuffix}`
 }
 
+export function getOrderPaymentSenderInfo(order: {
+  payment_sender_name?: string
+  payment_sender_account?: string
+  seller_internal_note?: string
+}) {
+  let name = order.payment_sender_name || ''
+  let account = order.payment_sender_account || ''
+  if (!name && order.seller_internal_note) {
+    const matchName = order.seller_internal_note.match(/Pengirim:\s*([^|()\n]+)/i)
+    if (matchName) name = matchName[1].trim()
+  }
+  if (!account && order.seller_internal_note) {
+    const matchAcc = order.seller_internal_note.match(/(?:Rek|Rekening|No\. Rek):\s*([^|()\n]+)/i)
+    if (matchAcc) account = matchAcc[1].trim()
+  }
+  return { name, account }
+}
+
 export function buildWhatsAppOrderMessage(
   order: Pick<
     Order,

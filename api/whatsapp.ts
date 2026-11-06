@@ -32,6 +32,37 @@ async function dispatchFonnteMessage(token: string, target: string, message: str
   }
 }
 
+async function fetchMediaAsInlineData(url: string, token?: string): Promise<{ mimeType: string; data: string } | null> {
+  if (!url) return null
+  try {
+    if (url.startsWith('data:')) {
+      const match = url.match(/^data:([^;]+);base64,(.+)$/)
+      if (match) {
+        return { mimeType: match[1], data: match[2] }
+      }
+    }
+
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      const headers: Record<string, string> = {}
+      if (token && url.includes('fonnte')) {
+        headers['Authorization'] = token
+      }
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(8000) })
+      if (!res.ok) return null
+      const arrayBuffer = await res.arrayBuffer()
+      const rawMime = res.headers.get('content-type') || 'image/jpeg'
+      const mimeType = rawMime.split(';')[0].trim()
+      const base64Data = typeof Buffer !== 'undefined'
+        ? Buffer.from(arrayBuffer).toString('base64')
+        : btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+      return { mimeType, data: base64Data }
+    }
+  } catch (err) {
+    console.warn('Error fetching media for AI vision:', err)
+  }
+  return null
+}
+
 // 3. Autonomous AI Processing Logic (Self-Contained)
 interface ProcessWhatsAppInput {
   senderPhone: string
@@ -183,10 +214,15 @@ ATURAN UTAMA ANDA:
      Sambut dengan hangat dan ramah, konfirmasikan ketersediaan barang dan variasinya, serta jawab pertanyaan pembeli secara solutif.
      JANGAN LANGSUNG menodong atau mendesak pembeli harus segera transfer/membayar. Berikan keleluasaan pembeli untuk makesure detail produk dan pengiriman terlebih dahulu.
    - Baru berikan panduan rekening transfer / QRIS toko jika pembeli menyatakan sudah mantap, telah selesai bertanya, atau meminta instruksi cara pembayaran.
-4. SANGAT PENTING - MENGUBAH STATUS PESANAN (PAID / LUNAS / BATAL):
-   - Jika pembeli mengirim bukti transfer, foto struk, atau menyatakan sudah bayar/transfer:
-     Periksa bukti transfer dengan seksama. Ekstrak nama pengirim/pemilik rekening, nomor rekening/e-wallet jika ada, serta bank/e-wallet pengirim.
-     Anda WAJIB MEMANGGIL tool "confirm_buyer_payment" dengan menyertakan sender_name, sender_account, dan payment_method hasil pembacaan bukti transfer agar tercatat ke database dan status pesanan otomatis berubah menjadi PAID.
+4. SANGAT PENTING - BACA BUKTI TRANSFER & CATAT DATA PENGIRIM (PAID / LUNAS):
+   - Jika pembeli mengirim bukti transfer, foto struk ATM/m-banking, atau gambar mutasi:
+     Gunakan kemampuan penglihatan visual Anda (Vision OCR) untuk memeriksa foto struk secara teliti:
+     1. Baca Nama Pengirim / Pemilik Rekening pembeli yang tertera pada struk (misal: "PENGIRIM: ANDI WIJAYA" atau nama rekening asal).
+     2. Baca Nomor Rekening atau Nomor E-Wallet pengirim jika tertera.
+     3. Baca Bank atau E-Wallet asal/tujuan transfer (misal: BCA, Mandiri, BRI, BNI, DANA, GoPay, OVO).
+     4. Baca Nominal uang yang ditransfer.
+     
+     Anda WAJIB MEMANGGIL tool "confirm_buyer_payment" dengan menyertakan sender_name, sender_account, dan payment_method yang berhasil Anda baca agar nama pengirim dan rekening pengirim OTOMATIS TERSIMPAN ke database pesanan penjual, dan status berubah menjadi PAID.
    - Jika pembeli membatalkan pesanan, panggil tool "update_order_status" dengan status "CANCELLED".
    - Jika pembeli tidak menyebutkan kode pesanan, gunakan kode pesanan pending yang tercatat di riwayat "PESANAN TERAKHIR DARI NOMOR INI" di atas.
    - JANGAN PERNAH menyatakan pesanan sudah Lunas (PAID) dalam teks balasan tanpa berhasil mengeksekusi tool database terlebih dahulu!
@@ -282,9 +318,13 @@ ATURAN UTAMA ANDA:
 
   const currentParts: any[] = []
   if (mediaUrl) {
-    currentParts.push({ text: `[Pelanggan mengirim file/foto bukti: ${mediaUrl}]` })
+    const inlineData = await fetchMediaAsInlineData(mediaUrl, store.fonnte_token)
+    if (inlineData) {
+      currentParts.push({ inlineData })
+    }
+    currentParts.push({ text: `[Pelanggan melampirkan foto/file bukti transfer pembayaran: ${mediaUrl}]` })
   }
-  currentParts.push({ text: messageText || (mediaUrl ? 'Saya mengirimkan foto/bukti pembayaran transfer ini, mohon segera diverifikasi.' : 'Halo') })
+  currentParts.push({ text: messageText || (mediaUrl ? 'Saya mengirimkan foto bukti pembayaran transfer ini, tolong dicek dan dicatat ya.' : 'Halo') })
 
   contents.push({
     role: 'user',
@@ -416,7 +456,18 @@ ATURAN UTAMA ANDA:
       } else if (fnName === 'confirm_buyer_payment' || fnName === 'update_order_status') {
         const rawCode = String(fnArgs.order_code || '').trim().replace(/^#/, '')
         const targetStatus = String(fnArgs.status || 'PAID').toUpperCase()
-        const notes = fnArgs.notes || fnArgs.payment_notes || (mediaUrl ? 'Bukti transfer terlampir' : 'Dikonfirmasi oleh pembeli via WA')
+        const senderName = String(fnArgs.sender_name || '').trim()
+        const senderAccount = String(fnArgs.sender_account || '').trim()
+        const paymentMethod = String(fnArgs.payment_method || '').trim()
+
+        const senderDetails = [
+          senderName ? `Pengirim: ${senderName}` : '',
+          senderAccount ? `Rek: ${senderAccount}` : '',
+          paymentMethod ? `Bank: ${paymentMethod}` : '',
+        ].filter(Boolean).join(' | ')
+
+        const baseNotes = fnArgs.notes || fnArgs.payment_notes || (mediaUrl ? 'Bukti transfer terlampir' : 'Dikonfirmasi oleh pembeli via WA')
+        const notes = senderDetails ? `${baseNotes} (${senderDetails})` : baseNotes
 
         let updatedSuccess = false
         let updatedOrderCode = rawCode
@@ -436,12 +487,17 @@ ATURAN UTAMA ANDA:
           if (!rpcErr && rpcRes && rpcRes.success) {
             updatedSuccess = true
             updatedOrderCode = rpcRes.order_code || updatedOrderCode
-            if (fnArgs.sender_name || fnArgs.sender_account || fnArgs.payment_method) {
+            try {
               const extraUpdates: any = {}
-              if (fnArgs.sender_name) extraUpdates.payment_sender_name = String(fnArgs.sender_name).trim()
-              if (fnArgs.sender_account) extraUpdates.payment_sender_account = String(fnArgs.sender_account).trim()
-              if (fnArgs.payment_method) extraUpdates.payment_method = String(fnArgs.payment_method).trim()
-              await supabase.from('orders').update(extraUpdates).ilike('order_code', `%${updatedOrderCode}%`)
+              if (senderName) extraUpdates.payment_sender_name = senderName
+              if (senderAccount) extraUpdates.payment_sender_account = senderAccount
+              if (paymentMethod) extraUpdates.payment_method = paymentMethod
+              if (senderDetails) extraUpdates.ai_summary = `Bukti transfer diverifikasi (${senderDetails})`
+              if (Object.keys(extraUpdates).length > 0) {
+                await supabase.from('orders').update(extraUpdates).ilike('order_code', `%${updatedOrderCode}%`)
+              }
+            } catch (extraErr) {
+              console.warn('Could not update extra sender columns:', extraErr)
             }
           } else if (rpcErr) {
             console.warn('RPC update_order_status_by_ai notice:', rpcErr.message)
@@ -496,43 +552,42 @@ ATURAN UTAMA ANDA:
           }
 
           if (matchedOrder) {
-            if (matchedOrder.status === targetStatus) {
+            const patchData: any = {
+              status: targetStatus,
+              managed_by_ai: true,
+              payment_proof_url: mediaUrl || matchedOrder.payment_proof_url || '',
+              seller_internal_note: `Status diubah (${targetStatus}) oleh AI WhatsApp: ${notes}`,
+              updated_at: new Date().toISOString(),
+            }
+            if (targetStatus === 'PAID') {
+              patchData.paid_at = new Date().toISOString()
+            }
+            if (senderName) patchData.payment_sender_name = senderName
+            if (senderAccount) patchData.payment_sender_account = senderAccount
+            if (paymentMethod) patchData.payment_method = paymentMethod
+            if (senderDetails) patchData.ai_summary = `Bukti transfer diverifikasi (${senderDetails})`
+
+            let { data: directUpdated, error: directErr } = await supabase
+              .from('orders')
+              .update(patchData)
+              .eq('id', matchedOrder.id)
+              .select()
+              .maybeSingle()
+
+            // Fallback if payment_sender columns don't exist yet in DB schema
+            if (directErr && (directErr.code === '42703' || directErr.message?.includes('payment_sender'))) {
+              delete patchData.payment_sender_name
+              delete patchData.payment_sender_account
+              const retry = await supabase.from('orders').update(patchData).eq('id', matchedOrder.id).select().maybeSingle()
+              directUpdated = retry.data
+              directErr = retry.error
+            }
+
+            if (!directErr && directUpdated) {
               updatedSuccess = true
-              updatedOrderCode = matchedOrder.order_code
-            } else {
-              const patchData: any = {
-                status: targetStatus,
-                managed_by_ai: true,
-                payment_proof_url: mediaUrl || matchedOrder.payment_proof_url || '',
-                seller_internal_note: `Status diubah (${targetStatus}) oleh AI WhatsApp: ${notes}`,
-                updated_at: new Date().toISOString(),
-              }
-              if (targetStatus === 'PAID') {
-                patchData.paid_at = new Date().toISOString()
-              }
-              if (fnArgs.sender_name) {
-                patchData.payment_sender_name = String(fnArgs.sender_name).trim()
-              }
-              if (fnArgs.sender_account) {
-                patchData.payment_sender_account = String(fnArgs.sender_account).trim()
-              }
-              if (fnArgs.payment_method) {
-                patchData.payment_method = String(fnArgs.payment_method).trim()
-              }
-
-              const { data: directUpdated, error: directErr } = await supabase
-                .from('orders')
-                .update(patchData)
-                .eq('id', matchedOrder.id)
-                .select()
-                .maybeSingle()
-
-              if (!directErr && directUpdated) {
-                updatedSuccess = true
-                updatedOrderCode = directUpdated.order_code
-              } else if (directErr) {
-                console.error('Direct order update error:', directErr)
-              }
+              updatedOrderCode = directUpdated.order_code
+            } else if (directErr) {
+              console.error('Direct order update error:', directErr)
             }
           }
         }

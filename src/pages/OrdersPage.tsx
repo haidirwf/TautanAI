@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import type { Order, OrderStatus } from '@/types'
 import { api } from '@/lib/supabase'
-import { formatIDR, sanitizeWhatsApp } from '@/lib/utils'
+import { formatIDR, sanitizeWhatsApp, getOrderPaymentSenderInfo } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { OrderEditModal } from '@/components/dashboard/OrderEditModal'
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout'
@@ -259,17 +259,22 @@ export function OrdersPage() {
                       </p>
 
                       {/* Bank / E-Wallet & Sender Info */}
-                      {(order.payment_method || order.payment_sender_name || order.payment_sender_account) && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-[#706c64] mt-2 pt-2 border-t border-[#e8e2d9]/60">
-                          <CreditCard className="size-3.5 text-[#cc785c] shrink-0" />
-                          <span className="font-semibold text-[#141413]">{order.payment_method || 'Transfer'}</span>
-                          {(order.payment_sender_name || order.payment_sender_account) && (
-                            <span className="text-[#8c867b] truncate">
-                              — a/n {order.payment_sender_name || '-'}{order.payment_sender_account ? ` (${order.payment_sender_account})` : ''}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      {(() => {
+                        const senderInfo = getOrderPaymentSenderInfo(order)
+                        const hasPaymentInfo = order.payment_method || senderInfo.name || senderInfo.account
+                        if (!hasPaymentInfo) return null
+                        return (
+                          <div className="flex items-center gap-1.5 text-[11px] text-[#706c64] mt-2 pt-2 border-t border-[#e8e2d9]/60">
+                            <CreditCard className="size-3.5 text-[#cc785c] shrink-0" />
+                            <span className="font-semibold text-[#141413]">{order.payment_method || 'Transfer'}</span>
+                            {(senderInfo.name || senderInfo.account) && (
+                              <span className="text-[#8c867b] truncate">
+                                — a/n {senderInfo.name || '-'}{senderInfo.account ? ` (${senderInfo.account})` : ''}
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })()}
                     </div>
 
                     {/* Bottom Row: Total & Action Buttons */}
@@ -377,17 +382,22 @@ export function OrdersPage() {
                           <div className="text-[11px] text-[#706c64] truncate mt-0.5">
                             {order.items_snapshot.map((item) => `${item.quantity}x ${item.product_name}`).join(', ')}
                           </div>
-                          {(order.payment_method || order.payment_sender_name || order.payment_sender_account) && (
-                            <div className="flex items-center gap-1.5 text-[11px] text-[#706c64] mt-1 pt-1 border-t border-[#e8e2d9]/50">
-                              <CreditCard className="size-3 text-[#cc785c] shrink-0" />
-                              <span className="font-semibold text-[#141413]">{order.payment_method || 'Transfer'}</span>
-                              {(order.payment_sender_name || order.payment_sender_account) && (
-                                <span className="text-[#8c867b] truncate">
-                                  — a/n {order.payment_sender_name || '-'}{order.payment_sender_account ? ` (${order.payment_sender_account})` : ''}
-                                </span>
-                              )}
-                            </div>
-                          )}
+                          {(() => {
+                            const senderInfo = getOrderPaymentSenderInfo(order)
+                            const hasPaymentInfo = order.payment_method || senderInfo.name || senderInfo.account
+                            if (!hasPaymentInfo) return null
+                            return (
+                              <div className="flex items-center gap-1.5 text-[11px] text-[#706c64] mt-1 pt-1 border-t border-[#e8e2d9]/50">
+                                <CreditCard className="size-3 text-[#cc785c] shrink-0" />
+                                <span className="font-semibold text-[#141413]">{order.payment_method || 'Transfer'}</span>
+                                {(senderInfo.name || senderInfo.account) && (
+                                  <span className="text-[#8c867b] truncate">
+                                    — a/n {senderInfo.name || '-'}{senderInfo.account ? ` (${senderInfo.account})` : ''}
+                                  </span>
+                                )}
+                              </div>
+                            )
+                          })()}
                         </td>
 
                         {/* 3. Status */}
