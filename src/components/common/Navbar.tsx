@@ -11,6 +11,7 @@ export function Navbar() {
   const path = location.pathname
   const { user, isAuthenticated, logout } = useAuthStore()
   const [isAuthOpen, setIsAuthOpen] = useState(false)
+  const [authMode, setAuthMode] = useState<'signup' | 'login'>('signup')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const handleLogout = async () => {
@@ -131,7 +132,10 @@ export function Navbar() {
               <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   type="button"
-                  onClick={() => setIsAuthOpen(true)}
+                  onClick={() => {
+                    setAuthMode('login')
+                    setIsAuthOpen(true)
+                  }}
                   className="px-2.5 py-1.5 text-xs sm:text-sm font-semibold text-neutral-700 hover:text-black transition-colors cursor-pointer"
                 >
                   Masuk
@@ -140,7 +144,10 @@ export function Navbar() {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   type="button"
-                  onClick={() => setIsAuthOpen(true)}
+                  onClick={() => {
+                    setAuthMode('signup')
+                    setIsAuthOpen(true)
+                  }}
                   className="rounded-full bg-[#111111] px-4 sm:px-5 py-2 text-xs sm:text-sm font-bold text-white hover:bg-black transition-all shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   <span>Buka Toko</span>
@@ -211,6 +218,7 @@ export function Navbar() {
                   type="button"
                   onClick={() => {
                     setIsMobileMenuOpen(false)
+                    setAuthMode('signup')
                     setIsAuthOpen(true)
                   }}
                   className="w-full text-center py-2.5 rounded-full bg-[#111111] hover:bg-black text-white text-xs font-bold shadow-xs cursor-pointer"
@@ -224,7 +232,7 @@ export function Navbar() {
       </header>
 
       {/* Auth Modal for 30s registration */}
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <AuthModal isOpen={isAuthOpen} initialMode={authMode} onClose={() => setIsAuthOpen(false)} />
     </>
   )
 }

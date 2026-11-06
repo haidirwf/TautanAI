@@ -25,6 +25,7 @@ if (typeof window !== 'undefined') {
 export function LandingPage() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isAuthOpen, setIsAuthOpen] = useState(false)
+  const [authMode, setAuthMode] = useState<'signup' | 'login'>('signup')
   const [claimSlug, setClaimSlug] = useState('')
   const [activeFaq, setActiveFaq] = useState<number | null>(0)
 
@@ -340,7 +341,10 @@ export function LandingPage() {
                 {/* Direct Action */}
                 <button
                   type="button"
-                  onClick={() => setIsAuthOpen(true)}
+                  onClick={() => {
+                    setAuthMode('signup')
+                    setIsAuthOpen(true)
+                  }}
                   className="w-full mt-3 py-2.5 rounded-xl bg-[#141413] hover:bg-black text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer group active:scale-98"
                 >
                   <MessageCircle className="size-3.5 text-[#cc785c]" />
@@ -644,7 +648,10 @@ export function LandingPage() {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
             <button
               type="button"
-              onClick={() => setIsAuthOpen(true)}
+              onClick={() => {
+                setAuthMode('signup')
+                setIsAuthOpen(true)
+              }}
               className="px-7 py-4 rounded-full bg-[#cc785c] hover:bg-[#b8674d] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer group active:scale-98"
             >
               <span>Buka Toko Gratis Sekarang</span>
@@ -673,7 +680,10 @@ export function LandingPage() {
             <a href="#faq" className="hover:text-[#141413] transition-colors">FAQ</a>
             <button
               type="button"
-              onClick={() => setIsAuthOpen(true)}
+              onClick={() => {
+                setAuthMode('login')
+                setIsAuthOpen(true)
+              }}
               className="text-[#cc785c] hover:text-[#b8674d] transition-colors cursor-pointer"
             >
               Masuk Penjual
@@ -688,7 +698,7 @@ export function LandingPage() {
       </footer>
 
       {/* Authentication Modal */}
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <AuthModal isOpen={isAuthOpen} initialMode={authMode} onClose={() => setIsAuthOpen(false)} />
     </div>
   )
 }
