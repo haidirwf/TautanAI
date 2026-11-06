@@ -80,21 +80,6 @@ async function processIncomingWhatsAppMessage(input: ProcessWhatsAppInput) {
 
   const { senderPhone, messageText, mediaUrl, senderName, storeWhatsappOrDevice } = input
 
-  // Identify Store
-  let storeQuery = supabase.from('stores').select('*')
-  if (storeWhatsappOrDevice) {
-    storeQuery = storeQuery.or(
-      `whatsapp_number.eq.${storeWhatsappOrDevice},whatsapp_number.eq.62${storeWhatsappOrDevice.replace(/^0/, '')},fonnte_token.eq.${storeWhatsappOrDevice}`
-    )
-  }
-
-  const { data: matchedStores } = await storeQuery.limit(1)
-  let store: any = matchedStores && matchedStores.length > 0 ? matchedStores[0] : null
-
-  if (!store || !store.ai_enabled) {
-    return { reply: '' }
-  }
-
   let cleanPhone = senderPhone.replace(/@.*$/, '').replace(/[^0-9]/g, '')
   if (cleanPhone.startsWith('0')) {
     cleanPhone = '62' + cleanPhone.slice(1)
@@ -102,6 +87,164 @@ async function processIncomingWhatsAppMessage(input: ProcessWhatsAppInput) {
     cleanPhone = '62' + cleanPhone
   }
   const altPhone = cleanPhone.startsWith('62') ? '0' + cleanPhone.slice(2) : cleanPhone
+
+  // Smart Store Identification (Supports Multi-Store Shared WhatsApp Number)
+  let store: any = null
+  let candidateStores: any[] = []
+  let isDirectStoreSelection = false
+
+  // Priority 1: Check for explicit Order Code in message (e.g. #ORD-20261106-XYZ)
+  const orderCodeMatch = (messageText || '').match(/#?ORD-[A-Za-z0-9-]+/i)
+  if (orderCodeMatch) {
+    const rawCode = orderCodeMatch[0]
+    const cleanCode = rawCode.replace(/^#/, '')
+    try {
+      const { data: matchedOrder } = await supabase
+        .from('orders')
+        .select('store_id')
+        .or(`order_code.eq.${rawCode},order_code.eq.#${cleanCode},order_code.eq.${cleanCode}`)
+        .limit(1)
+        .maybeSingle()
+
+      if (matchedOrder?.store_id) {
+        const { data: storeByOrder } = await supabase
+          .from('stores')
+          .select('*')
+          .eq('id', matchedOrder.store_id)
+          .maybeSingle()
+
+        if (storeByOrder && storeByOrder.ai_enabled) {
+          store = storeByOrder
+        }
+      }
+    } catch (err) {
+      console.warn('Error resolving store by order code:', err)
+    }
+  }
+
+  // If store is not directly resolved by order code, find all matching stores by device/phone
+  if (!store) {
+    let storeQuery = supabase.from('stores').select('*')
+    if (storeWhatsappOrDevice) {
+      const rawDevice = storeWhatsappOrDevice.trim()
+      const cleanDev = rawDevice.replace(/[^0-9]/g, '')
+      const idDev = cleanDev.startsWith('0') ? '62' + cleanDev.slice(1) : (cleanDev.startsWith('8') ? '62' + cleanDev : cleanDev)
+      const altDev = idDev.startsWith('62') ? '0' + idDev.slice(2) : idDev
+
+      storeQuery = storeQuery.or(
+        `whatsapp_number.eq.${rawDevice},whatsapp_number.eq.${idDev},whatsapp_number.eq.${altDev},fonnte_token.eq.${rawDevice}`
+      )
+    }
+
+    const { data: matchedStoresRaw } = await storeQuery.limit(10)
+    candidateStores = (matchedStoresRaw || []).filter((s: any) => s.ai_enabled)
+
+    if (candidateStores.length === 1) {
+      store = candidateStores[0]
+    } else if (candidateStores.length > 1) {
+      const trimmedMsg = (messageText || '').trim().toLowerCase()
+
+      // Priority 2: Check numeric selection ("1", "toko 1", "nomor 1", "pilihan 1") or store name/slug mention
+      const numMatch = trimmedMsg.match(/^(?:toko\s*|nomor\s*|no\.?\s*|pilihan\s*)?([1-9])(?:\.|\b)?$/i)
+      if (numMatch) {
+        const idx = parseInt(numMatch[1], 10) - 1
+        if (idx >= 0 && idx < candidateStores.length) {
+          store = candidateStores[idx]
+          isDirectStoreSelection = true
+        }
+      }
+
+      if (!store) {
+        for (const s of candidateStores) {
+          const sName = (s.name || '').trim().toLowerCase()
+          const sSlug = (s.slug || '').trim().toLowerCase()
+          if ((sName && trimmedMsg.includes(sName)) || (sSlug && trimmedMsg.includes(sSlug))) {
+            store = s
+            break
+          }
+        }
+      }
+
+      // Priority 3: Check product name match in candidate stores' active catalogs
+      if (!store && trimmedMsg.length >= 3) {
+        try {
+          const candidateStoreIds = candidateStores.map((s: any) => s.id)
+          const { data: activeProducts } = await supabase
+            .from('products')
+            .select('store_id, name')
+            .in('store_id', candidateStoreIds)
+            .eq('is_active', true)
+
+          if (activeProducts && activeProducts.length > 0) {
+            for (const p of activeProducts) {
+              const pName = (p.name || '').trim().toLowerCase()
+              if (pName.length >= 3 && trimmedMsg.includes(pName)) {
+                store = candidateStores.find((s: any) => s.id === p.store_id) || null
+                if (store) break
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Error matching store by product name:', err)
+        }
+      }
+
+      // Priority 4: Check buyer transaction history & active chat session
+      if (!store) {
+        try {
+          const candidateStoreIds = candidateStores.map((s: any) => s.id)
+
+          // 4a. Check buyer's recent orders
+          const { data: recentBuyerOrders } = await supabase
+            .from('orders')
+            .select('store_id, created_at')
+            .in('store_id', candidateStoreIds)
+            .or(`buyer_phone.eq.${cleanPhone},buyer_phone.eq.${altPhone}`)
+            .order('created_at', { ascending: false })
+            .limit(1)
+
+          if (recentBuyerOrders && recentBuyerOrders.length > 0) {
+            store = candidateStores.find((s: any) => s.id === recentBuyerOrders[0].store_id) || null
+          }
+
+          // 4b. Check recent ai_chat_sessions
+          if (!store) {
+            const { data: recentChats } = await supabase
+              .from('ai_chat_sessions')
+              .select('store_id, created_at')
+              .in('store_id', candidateStoreIds)
+              .eq('buyer_phone', cleanPhone)
+              .order('created_at', { ascending: false })
+              .limit(1)
+
+            if (recentChats && recentChats.length > 0) {
+              store = candidateStores.find((s: any) => s.id === recentChats[0].store_id) || null
+            }
+          }
+        } catch (err) {
+          console.warn('Error matching store from buyer history:', err)
+        }
+      }
+
+      // Priority 5: Disambiguation Prompt if completely ambiguous cold chat
+      if (!store) {
+        const storeListText = candidateStores
+          .map((s: any, idx: number) => `${idx + 1}. *${s.name}*${s.tagline ? ` — _${s.tagline}_` : ''}`)
+          .join('\n')
+        const customerGreeting = senderName && senderName !== 'Pelanggan' ? ` Kak ${senderName}` : ' Kak'
+        const disambiguationReply = `Halo${customerGreeting}! Terima kasih telah menghubungi kami 🙏\n\nNomor WhatsApp ini melayani beberapa toko resmi kami:\n\n${storeListText}\n\nBoleh beri tahu kami, Kakak ingin bertanya atau berbelanja dari toko yang mana ya? (Cukup balas dengan angka *1* atau *2*, atau sebutkan nama tokonya ya 😊)`
+
+        return {
+          reply: disambiguationReply,
+          fonnteToken: candidateStores[0].fonnte_token,
+        }
+      }
+    }
+  }
+
+  if (!store || !store.ai_enabled) {
+    return { reply: '' }
+  }
 
   // Parallel fetch for catalog and recent chat history
   const [productsRes, chatRes] = await Promise.all([
@@ -199,7 +342,7 @@ async function processIncomingWhatsAppMessage(input: ProcessWhatsAppInput) {
 Gaya Karakter / Persona Toko: "${store.ai_persona || 'Ramah, sopan, sigap membantu, dan mengedepankan keramahan wirausaha Bali.'}"
 Instruksi Operasional Toko: "${store.ai_instructions || 'Bantu pembeli menjawab pertanyaan seputar katalog, cek stok, rekap pesanan, dan verifikasi pembayaran transfer.'}"
 Panduan Rekening Pembayaran Toko: "${store.ai_payment_info || 'BCA: 1234567890 a/n Toko'}"
-
+${isDirectStoreSelection ? `\nCATATAN SISTEM: Pembeli baru saja memilih toko "${store.name}" dari menu pilihan toko. Sambut pembeli dengan hangat dan ramah atas nama toko "${store.name}", jelaskan secara ringkas jenis produk unggulan yang tersedia, dan tanyakan apa yang bisa dibantu atau tawarkan rekomendasi produk.\n` : ''}
 KATALOG PRODUK TOKO SAAT INI:
 ${catalogContext || '(Katalog belum memiliki produk aktif)'}
 
