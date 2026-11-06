@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
-import { Plus, Search, Tag, Package, ExternalLink, X, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Search, Tag, Package, ExternalLink, X, Pencil, Trash2, Bot } from 'lucide-react'
 import type { Product, Category } from '@/types'
 import { api } from '@/lib/supabase'
 import { formatIDR, cn } from '@/lib/utils'
@@ -462,6 +462,15 @@ export function CatalogPage() {
                           <span>{vg.name} ({(vg.options?.length ?? (vg as any).variant_options?.length ?? 0)})</span>
                         </span>
                       ))}
+                      {prod.ai_context && (
+                        <span
+                          className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] bg-[#faf4ed] border border-[#cc785c]/25 text-[#8c4327] font-medium"
+                          title={`Instruksi AI: ${prod.ai_context}`}
+                        >
+                          <Bot className="size-2 sm:size-2.5 text-[#cc785c]" />
+                          <span>AI Dilatih</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
