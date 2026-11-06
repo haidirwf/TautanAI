@@ -5,7 +5,6 @@ import {
   LayoutGrid,
   ShoppingBag,
   Package,
-  Users,
   BarChart3,
   Settings,
   Star,
@@ -73,12 +72,11 @@ export function DashboardLayout({ children, onAddProductClick, isLoading = false
 
   const navItems = [
     { label: 'Ringkasan', href: '/dashboard', icon: LayoutGrid, active: path === '/dashboard' },
-    { label: 'Katalog', href: '/dashboard/katalog', icon: Package, active: path === '/dashboard/katalog' || path === '/katalog' },
+    { label: 'Katalog', href: '/dashboard/catalog', icon: Package, active: path === '/dashboard/catalog' || path === '/dashboard/katalog' },
     { label: 'Pesanan', href: '/dashboard/orders', icon: ShoppingBag, active: path === '/dashboard/orders' || path === '/orders' },
-    { label: 'Pelanggan', href: '/dashboard/pelanggan', icon: Users, active: path === '/dashboard/pelanggan' || path === '/pelanggan' },
-    { label: 'Laporan', href: '/dashboard/laporan', icon: BarChart3, active: path === '/dashboard/laporan' || path === '/laporan' },
-    { label: 'Ulasan', href: '/dashboard/ulasan', icon: Star, active: path === '/dashboard/ulasan' || path === '/ulasan' },
-    { label: 'Pengaturan', href: '/dashboard/pengaturan', icon: Settings, active: path === '/dashboard/pengaturan' || path === '/pengaturan' },
+    { label: 'Laporan', href: '/dashboard/reports', icon: BarChart3, active: path === '/dashboard/reports' || path === '/dashboard/laporan' },
+    { label: 'Ulasan', href: '/dashboard/reviews', icon: Star, active: path === '/dashboard/reviews' || path === '/dashboard/ulasan' },
+    { label: 'Pengaturan', href: '/dashboard/settings', icon: Settings, active: path === '/dashboard/settings' || path === '/dashboard/pengaturan' },
   ]
 
   const handleLogout = () => {
@@ -90,7 +88,7 @@ export function DashboardLayout({ children, onAddProductClick, isLoading = false
     if (onAddProductClick) {
       onAddProductClick()
     } else {
-      navigate('/dashboard/katalog')
+      navigate('/dashboard/catalog')
     }
   }
 

@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { Navbar } from '@/components/common/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -11,7 +11,6 @@ const StorefrontPage = lazy(() => import('@/pages/StorefrontPage').then((m) => (
 const DashboardPage = lazy(() => import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })))
 const OrdersPage = lazy(() => import('@/pages/OrdersPage').then((m) => ({ default: m.OrdersPage })))
 const CatalogPage = lazy(() => import('@/pages/CatalogPage').then((m) => ({ default: m.CatalogPage })))
-const CustomersPage = lazy(() => import('@/pages/CustomersPage').then((m) => ({ default: m.CustomersPage })))
 const ReportsPage = lazy(() => import('@/pages/ReportsPage').then((m) => ({ default: m.ReportsPage })))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })))
 const ReviewsPage = lazy(() => import('@/pages/ReviewsPage').then((m) => ({ default: m.ReviewsPage })))
@@ -35,12 +34,15 @@ function AppContent() {
   }, [initializeAuth])
   const isDashboardRoute = location.pathname.startsWith('/dashboard') || [
     '/orders',
+    '/catalog',
     '/katalog',
-    '/pelanggan',
+    '/reviews',
     '/ulasan',
+    '/reports',
     '/laporan',
-    '/pengaturan',
     '/settings',
+    '/pengaturan',
+    '/pelanggan',
   ].some((r) => location.pathname.startsWith(r))
   const isStandaloneLayout =
     isDashboardRoute ||
@@ -72,25 +74,33 @@ function AppContent() {
                 <Route path="/login" element={<AuthPage />} />
                 <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
                 
-                {/* Dashboard Sub-routes */}
+                {/* Unified English Dashboard Sub-routes */}
                 <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
                 <Route path="/dashboard/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
-                <Route path="/dashboard/katalog" element={<ProtectedRoute><CatalogPage /></ProtectedRoute>} />
-                <Route path="/dashboard/pelanggan" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />
-                <Route path="/dashboard/ulasan" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
-                <Route path="/dashboard/laporan" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-                <Route path="/dashboard/pengaturan" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/catalog" element={<ProtectedRoute><CatalogPage /></ProtectedRoute>} />
+                <Route path="/dashboard/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/reviews" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-                <Route path="/dashboard/setting" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
-                {/* Backward compatibility aliases */}
-                <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
-                <Route path="/katalog" element={<ProtectedRoute><CatalogPage /></ProtectedRoute>} />
-                <Route path="/pelanggan" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />
-                <Route path="/ulasan" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
-                <Route path="/laporan" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-                <Route path="/pengaturan" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+                {/* Backward compatibility redirects (Seamless 1-language English routing) */}
+                <Route path="/dashboard/katalog" element={<Navigate to="/dashboard/catalog" replace />} />
+                <Route path="/dashboard/pelanggan" element={<Navigate to="/dashboard/orders" replace />} />
+                <Route path="/dashboard/ulasan" element={<Navigate to="/dashboard/reviews" replace />} />
+                <Route path="/dashboard/laporan" element={<Navigate to="/dashboard/reports" replace />} />
+                <Route path="/dashboard/pengaturan" element={<Navigate to="/dashboard/settings" replace />} />
+                <Route path="/dashboard/setting" element={<Navigate to="/dashboard/settings" replace />} />
+
+                {/* Root-level aliases redirecting to unified dashboard */}
+                <Route path="/orders" element={<Navigate to="/dashboard/orders" replace />} />
+                <Route path="/catalog" element={<Navigate to="/dashboard/catalog" replace />} />
+                <Route path="/katalog" element={<Navigate to="/dashboard/catalog" replace />} />
+                <Route path="/pelanggan" element={<Navigate to="/dashboard/orders" replace />} />
+                <Route path="/reports" element={<Navigate to="/dashboard/reports" replace />} />
+                <Route path="/laporan" element={<Navigate to="/dashboard/reports" replace />} />
+                <Route path="/reviews" element={<Navigate to="/dashboard/reviews" replace />} />
+                <Route path="/ulasan" element={<Navigate to="/dashboard/reviews" replace />} />
+                <Route path="/settings" element={<Navigate to="/dashboard/settings" replace />} />
+                <Route path="/pengaturan" element={<Navigate to="/dashboard/settings" replace />} />
 
                 <Route path="/:slug" element={<StorefrontPage />} />
               </Routes>

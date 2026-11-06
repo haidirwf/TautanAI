@@ -210,7 +210,7 @@ export function DashboardPage() {
 
             {/* Asisten AI Quick Button beside store link & tambah produk */}
             <Link
-              to="/dashboard/pengaturan"
+              to="/dashboard/settings"
               className="flex-1 sm:flex-initial h-9 px-3 rounded-lg bg-white hover:bg-[#faf8f5] border border-[#e8e2d9] text-xs font-medium text-[#141413] flex items-center justify-center gap-1.5 shadow-2xs transition-colors shrink-0"
               title="Kelola Asisten AI WhatsApp"
             >
@@ -295,7 +295,7 @@ export function DashboardPage() {
 
           {/* 4. Rating & Ulasan Toko */}
           <Link
-            to="/dashboard/ulasan"
+            to="/dashboard/reviews"
             className="p-3.5 sm:p-5 flex flex-col justify-between bg-white hover:bg-[#faf8f5]/60 transition-colors group cursor-pointer min-w-0"
           >
             <div className="flex items-center justify-between text-xs text-[#706c64] gap-2">
