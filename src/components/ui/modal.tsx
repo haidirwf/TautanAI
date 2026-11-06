@@ -9,6 +9,7 @@ interface ModalProps {
   onClose: () => void
   title?: string
   description?: string
+  headerAddon?: React.ReactNode
   children: React.ReactNode
   footer?: React.ReactNode
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl'
@@ -21,6 +22,7 @@ export function Modal({
   onClose,
   title,
   description,
+  headerAddon,
   children,
   footer,
   maxWidth = 'md',
@@ -119,21 +121,24 @@ export function Modal({
                     </p>
                   )}
                 </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  type="button"
-                  onClick={onClose}
-                  className={cn(
-                    'p-1.5 rounded-full transition-colors shrink-0 ml-2 cursor-pointer',
-                    surface === 'dark'
-                      ? 'hover:bg-[#1b2238] text-[#9bb0d1] hover:text-white'
-                      : 'hover:bg-surface-card text-muted hover:text-ink'
-                  )}
-                  aria-label="Tutup"
-                >
-                  <X className="size-4" />
-                </motion.button>
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                  {headerAddon}
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    type="button"
+                    onClick={onClose}
+                    className={cn(
+                      'p-1.5 rounded-full transition-colors cursor-pointer',
+                      surface === 'dark'
+                        ? 'hover:bg-[#1b2238] text-[#9bb0d1] hover:text-white'
+                        : 'hover:bg-surface-card text-muted hover:text-ink'
+                    )}
+                    aria-label="Tutup"
+                  >
+                    <X className="size-4" />
+                  </motion.button>
+                </div>
               </div>
             ) : (
               <div className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 z-20">

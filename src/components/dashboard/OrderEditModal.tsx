@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { MessageCircle, Save, MapPin, Bot, ShieldCheck, ExternalLink, Image as ImageIcon, CreditCard } from 'lucide-react'
+import { MessageCircle, Save, MapPin, Bot, ExternalLink, Image as ImageIcon, CreditCard } from 'lucide-react'
 import type { Order, OrderStatus } from '@/types'
 import { formatIDR, sanitizeWhatsApp } from '@/lib/utils'
 import { api } from '@/lib/supabase'
@@ -101,7 +101,18 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
       isOpen={isOpen}
       onClose={onClose}
       title={`Kelola Pesanan: ${order.order_code}`}
-      description={`Dibuat pada ${new Date(order.created_at).toLocaleString('id-ID')}`}
+      description={order.ai_summary ? `Dibuat pada ${new Date(order.created_at).toLocaleString('id-ID')} • ${order.ai_summary}` : `Dibuat pada ${new Date(order.created_at).toLocaleString('id-ID')}`}
+      headerAddon={
+        order.managed_by_ai ? (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#faf4ed] border border-[#cc785c]/25 text-[#8c4327]">
+            <Bot className="size-3.5 text-[#cc785c] shrink-0" />
+            <span className="text-[11px] font-semibold tracking-tight">AI Otonom</span>
+            <span className="text-[10px] font-medium bg-[#edf7ee] text-[#1e612f] border border-[#2e7d32]/20 px-1.5 py-0.2 rounded font-mono">
+              Aktif
+            </span>
+          </div>
+        ) : null
+      }
       maxWidth="2xl"
       surface="canvas"
     >
@@ -156,43 +167,6 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
               ))}
             </div>
           </div>
-
-          {order.managed_by_ai && (
-            <div className="pt-3 border-t border-[#e8e2d9]/60">
-              <div className="p-3.5 rounded-xl bg-[#faf4ed]/60 border border-[#cc785c]/25 flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-[#8c4327] flex items-center gap-1.5">
-                    <Bot className="size-3.5 text-[#cc785c]" />
-                    <span>Dikelola Asisten AI Otonom</span>
-                  </span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#edf7ee] text-[#1e612f] border border-[#2e7d32]/20 flex items-center gap-1">
-                    <ShieldCheck className="size-3 text-emerald-600" />
-                    Otomatisasi Aktif
-                  </span>
-                </div>
-                <p className="text-xs text-[#5c5850] leading-relaxed">
-                  {order.ai_summary || 'Pesanan dan status diproses secara otonom oleh AI WhatsApp Copilot.'}
-                </p>
-                {order.payment_proof_url && (
-                  <div className="mt-1 pt-2 border-t border-[#cc785c]/15 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <ImageIcon className="size-4 text-[#cc785c] shrink-0" />
-                      <span className="text-xs font-mono text-[#141413] truncate">Bukti Transfer Pelanggan</span>
-                    </div>
-                    <a
-                      href={order.payment_proof_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2.5 py-1 rounded-lg bg-white border border-[#e8e2d9] text-xs font-semibold text-[#cc785c] hover:text-[#a9583e] flex items-center gap-1 shrink-0 transition-colors shadow-2xs"
-                    >
-                      <span>Lihat Foto</span>
-                      <ExternalLink className="size-3" />
-                    </a>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Order Lifecycle Status Picker */}
@@ -308,9 +282,23 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
 
         {/* Data Rekening / E-Wallet Pengirim (Pembeli) */}
         <div className="p-3.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] flex flex-col gap-2.5">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#141413]">
-            <CreditCard className="size-3.5 text-[#cc785c]" />
-            <span>Data Rekening / E-Wallet Pengirim (Pembeli)</span>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#141413]">
+              <CreditCard className="size-3.5 text-[#cc785c]" />
+              <span>Data Rekening / E-Wallet Pengirim (Pembeli)</span>
+            </div>
+            {order.payment_proof_url && (
+              <a
+                href={order.payment_proof_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1 rounded-md bg-white border border-[#e8e2d9] text-[11px] font-semibold text-[#cc785c] hover:text-[#a9583e] flex items-center gap-1 shrink-0 transition-colors shadow-2xs cursor-pointer"
+              >
+                <ImageIcon className="size-3.5 text-[#cc785c]" />
+                <span>Bukti Transfer</span>
+                <ExternalLink className="size-3" />
+              </a>
+            )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
