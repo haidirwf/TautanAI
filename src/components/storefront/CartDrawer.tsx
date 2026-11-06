@@ -565,7 +565,7 @@ export function CartDrawer({ store }: CartDrawerProps) {
                 <div className="p-2.5 rounded-lg bg-[#faf4ed] border border-[#cc785c]/25 flex items-center gap-2 text-left">
                   <Bot className="size-4 text-[#cc785c] shrink-0" />
                   <p className="text-[11px] text-[#8c4327] leading-tight">
-                    <span className="font-semibold">Respon Otomatis 24/7:</span> Pesanan & bukti transfer Anda langsung diproses oleh Asisten WhatsApp toko.
+                    <span className="font-semibold">Konsultasi 24/7:</span> Anda bisa tanya-tanya, cek ongkir, atau makesure detail pesanan secara santai dengan Asisten Toko di WhatsApp sebelum bayar.
                   </p>
                 </div>
 
@@ -584,7 +584,7 @@ export function CartDrawer({ store }: CartDrawerProps) {
                     className="w-2/3 bg-primary hover:bg-primary-active"
                   >
                     <MessageCircle className="size-4" />
-                    <span>{isSubmitting ? 'Memproses...' : 'Kirim ke WhatsApp'}</span>
+                    <span>{isSubmitting ? 'Menyiapkan...' : 'Tanya di WhatsApp'}</span>
                   </Button>
                 </div>
               </div>
@@ -615,15 +615,15 @@ export function CartDrawer({ store }: CartDrawerProps) {
 
               <div>
                 <h4 className="font-sans text-xl font-bold text-ink">
-                  Pesanan Berhasil Dibuat!
+                  Draf Pesanan Disiapkan!
                 </h4>
                 <p className="font-mono text-xs font-medium text-muted mt-1">
-                  Kode Pesanan: {lastCreatedOrder.order_code}
+                  Kode Referensi: {lastCreatedOrder.order_code}
                 </p>
               </div>
 
               <p className="text-xs text-muted max-w-sm leading-relaxed">
-                Jendela WhatsApp Anda telah dibuka secara otomatis. Jika tidak terbuka, silakan klik tombol di bawah untuk meneruskan rincian pesanan ke penjual.
+                Jendela WhatsApp Anda telah dibuka. Anda bisa langsung tanya-tanya ketersediaan stok, cek ongkir, atau makesure detail barang ke penjual tanpa paksaan harus langsung bayar.
               </p>
 
               <div className="w-full flex flex-col gap-2 pt-2">

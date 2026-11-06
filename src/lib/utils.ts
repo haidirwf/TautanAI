@@ -68,34 +68,26 @@ export function buildWhatsAppOrderMessage(
     .join('\n')
 
   const lines = [
-    `Halo kak ${store.name}, saya ingin memesan:`,
-    ``,
-    `*Pesanan:* ${order.order_code}`,
-    `*Nama:* ${order.buyer_name}`,
-    `*No. WA:* ${order.buyer_phone}`,
-    `*Alamat:* ${order.shipping_address}`,
+    `Halo kak ${store.name}! Saya tertarik dengan produk ini dan mau tanya-tanya / makesure dulu ya kak:`,
     ``,
     `*Rincian Barang:*`,
     itemsText,
     ``,
-    `*Subtotal:* ${formatIDR(order.subtotal)}`,
+    `*Estimasi Subtotal:* ${formatIDR(order.subtotal)}`,
+    ``,
+    `*Data Saya:*`,
+    `- Nama: ${order.buyer_name}`,
+    `- Alamat Pengiriman: ${order.shipping_address}`,
+    `- Kode Draf: ${order.order_code}`,
   ]
-
-  if (order.payment_sender_name || order.payment_sender_account) {
-    lines.push(``)
-    lines.push(`*Data Pembayaran Pembeli:*`)
-    if (order.payment_method) lines.push(`- Bank atau E-Wallet: ${order.payment_method}`)
-    if (order.payment_sender_name) lines.push(`- Atas Nama: ${order.payment_sender_name}`)
-    if (order.payment_sender_account) lines.push(`- No. Rekening atau No. HP: ${order.payment_sender_account}`)
-  }
 
   if (order.order_notes?.trim()) {
     lines.push(``)
-    lines.push(`*Catatan:* ${order.order_notes.trim()}`)
+    lines.push(`*Catatan Tambahan:* ${order.order_notes.trim()}`)
   }
 
   lines.push(``)
-  lines.push(`Mohon konfirmasi pesanan dan estimasi pengirimannya ya kak. Terima kasih!`)
+  lines.push(`Apakah produk di atas masih ready kak? Sekalian mau makesure info ongkir atau tanya detail barangnya dulu ya. Terima kasih banyak! 😊`)
 
   return lines.join('\n')
 }
