@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { MessageCircle, Save, MapPin, Bot, ExternalLink, Image as ImageIcon, CreditCard } from 'lucide-react'
+import { MessageCircle, Save, MapPin, Bot, ExternalLink, Image as ImageIcon } from 'lucide-react'
 import type { Order, OrderStatus } from '@/types'
 import { formatIDR, sanitizeWhatsApp } from '@/lib/utils'
 import { api } from '@/lib/supabase'
@@ -130,16 +130,31 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
                 <span className="line-clamp-1 sm:line-clamp-none">{order.shipping_address}</span>
               </p>
             </div>
-            <a
-              href={directWaUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Chat Pembeli WA"
-              className="size-8 sm:size-auto sm:h-8 flex sm:inline-flex items-center justify-center sm:gap-1.5 px-0 sm:px-3 rounded-lg bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-semibold shadow-xs transition-all shrink-0 active:scale-95 cursor-pointer"
-            >
-              <MessageCircle className="size-4 sm:size-3.5 shrink-0" />
-              <span className="hidden sm:inline">Chat Pembeli WA</span>
-            </a>
+            <div className="flex items-center gap-2 shrink-0">
+              {order.payment_proof_url && (
+                <a
+                  href={order.payment_proof_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Lihat Bukti Transfer"
+                  className="size-8 sm:size-auto sm:h-8 flex sm:inline-flex items-center justify-center sm:gap-1.5 px-0 sm:px-3 rounded-lg bg-white border border-[#e8e2d9] hover:bg-[#faf8f5] text-[#cc785c] text-xs font-semibold shadow-2xs transition-all shrink-0 active:scale-95 cursor-pointer"
+                >
+                  <ImageIcon className="size-4 sm:size-3.5 text-[#cc785c] shrink-0" />
+                  <span className="hidden sm:inline">Bukti Transfer</span>
+                  <ExternalLink className="size-3 hidden sm:inline text-[#cc785c]/80" />
+                </a>
+              )}
+              <a
+                href={directWaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Chat Pembeli WA"
+                className="size-8 sm:size-auto sm:h-8 flex sm:inline-flex items-center justify-center sm:gap-1.5 px-0 sm:px-3 rounded-lg bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-semibold shadow-xs transition-all shrink-0 active:scale-95 cursor-pointer"
+              >
+                <MessageCircle className="size-4 sm:size-3.5 shrink-0" />
+                <span className="hidden sm:inline">Chat Pembeli WA</span>
+              </a>
+            </div>
           </div>
 
           {/* Items Table Snapshot */}
@@ -169,52 +184,22 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
           </div>
         </div>
 
-        {/* Data Rekening / E-Wallet Pengirim (Pembeli) */}
-        <div className="p-3.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] flex flex-col gap-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#141413]">
-              <CreditCard className="size-3.5 text-[#cc785c]" />
-              <span>Data Rekening / E-Wallet Pengirim (Pembeli)</span>
-            </div>
-            {order.payment_proof_url && (
-              <a
-                href={order.payment_proof_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-2.5 py-1 rounded-md bg-white border border-[#e8e2d9] text-[11px] font-semibold text-[#cc785c] hover:text-[#a9583e] flex items-center gap-1 shrink-0 transition-colors shadow-2xs cursor-pointer"
-              >
-                <ImageIcon className="size-3.5 text-[#cc785c]" />
-                <span>Bukti Transfer</span>
-                <ExternalLink className="size-3" />
-              </a>
-            )}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div>
-              <label className="text-[11px] font-medium text-[#706c64] block mb-1">
-                Nama Pengirim / Pemilik Rekening
-              </label>
-              <input
-                type="text"
-                placeholder="Nama pemilik rekening pembeli"
-                value={paymentSenderName}
-                onChange={(e) => setPaymentSenderName(e.target.value)}
-                className="w-full h-9 sm:h-10 px-3 rounded-lg bg-white border border-[#e8e2d9] text-xs sm:text-sm text-[#141413] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] font-medium text-[#706c64] block mb-1">
-                Nomor Rekening / No. E-Wallet
-              </label>
-              <input
-                type="text"
-                placeholder="Nomor rekening atau nomor e-wallet"
-                value={paymentSenderAccount}
-                onChange={(e) => setPaymentSenderAccount(e.target.value)}
-                className="w-full h-9 sm:h-10 px-3 rounded-lg bg-white border border-[#e8e2d9] text-xs sm:text-sm font-mono text-[#141413] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
-              />
-            </div>
-          </div>
+        {/* Data Rekening Pembeli */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <input
+            type="text"
+            placeholder="Nama rekening pembeli"
+            value={paymentSenderName}
+            onChange={(e) => setPaymentSenderName(e.target.value)}
+            className="w-full h-9 sm:h-10 px-3 sm:px-3.5 rounded-xl bg-white border border-[#e8e2d9] text-xs sm:text-sm text-[#141413] placeholder:text-[#a09a8f] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
+          />
+          <input
+            type="text"
+            placeholder="Nomor rekening atau e-wallet pembeli"
+            value={paymentSenderAccount}
+            onChange={(e) => setPaymentSenderAccount(e.target.value)}
+            className="w-full h-9 sm:h-10 px-3 sm:px-3.5 rounded-xl bg-white border border-[#e8e2d9] text-xs sm:text-sm font-mono text-[#141413] placeholder:text-[#a09a8f] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
+          />
         </div>
 
         {/* Order Lifecycle Status Picker */}

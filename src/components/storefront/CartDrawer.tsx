@@ -558,16 +558,16 @@ export function CartDrawer({ store }: CartDrawerProps) {
                   />
                 </div>
 
-                {/* Data Rekening / E-Wallet Pengirim */}
+                {/* Data Rekening Pembeli */}
                 <div className="pt-3 border-t border-hairline flex flex-col gap-3">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-ink">
                     <CreditCard className="size-3.5 text-primary" />
-                    <span>Rekening / E-Wallet Pengirim</span>
+                    <span>Rekening atau E-Wallet Pembeli</span>
                   </div>
 
                   <div>
                     <label className="text-[11px] font-medium text-muted block mb-1">
-                      Bank atau E-Wallet Pengirim <span className="text-primary">*</span>
+                      Bank atau E-Wallet Pembeli <span className="text-primary">*</span>
                     </label>
                     <select
                       value={customerInfo.paymentMethod || 'Transfer BCA'}
@@ -580,7 +580,7 @@ export function CartDrawer({ store }: CartDrawerProps) {
                         <option value="Transfer BRI">Bank BRI</option>
                         <option value="Transfer BNI">Bank BNI</option>
                         <option value="Transfer BSI">Bank BSI (Syariah)</option>
-                        <option value="Transfer Bank Jago / SeaBank">Bank Jago / SeaBank</option>
+                        <option value="Transfer Bank Jago atau SeaBank">Bank Jago atau SeaBank</option>
                         <option value="Transfer Bank Lainnya">Bank Lainnya</option>
                       </optgroup>
                       <optgroup label="E-Wallet">
@@ -592,7 +592,7 @@ export function CartDrawer({ store }: CartDrawerProps) {
                       </optgroup>
                       <optgroup label="Metode Lain">
                         <option value="QRIS">QRIS</option>
-                        <option value="COD / Bayar di Tempat">COD / Bayar di Tempat</option>
+                        <option value="COD atau Bayar di Tempat">COD atau Bayar di Tempat</option>
                       </optgroup>
                     </select>
                   </div>
@@ -600,7 +600,7 @@ export function CartDrawer({ store }: CartDrawerProps) {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
                       <label className="text-[11px] font-medium text-muted block mb-1">
-                        Nama Pemilik / Pengirim <span className="text-primary">*</span>
+                        Nama Rekening Pembeli <span className="text-primary">*</span>
                       </label>
                       <input
                         type="text"
@@ -617,7 +617,7 @@ export function CartDrawer({ store }: CartDrawerProps) {
 
                     <div>
                       <label className="text-[11px] font-medium text-muted block mb-1">
-                        No. Rekening / No. HP E-Wallet <span className="text-primary">*</span>
+                        Nomor Rekening atau E-Wallet Pembeli <span className="text-primary">*</span>
                       </label>
                       <input
                         type="text"

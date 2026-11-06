@@ -170,7 +170,10 @@ ATURAN UTAMA ANDA:
    - Jika pembeli membatalkan pesanan, panggil tool "update_order_status" dengan status "CANCELLED".
    - Jika pembeli tidak menyebutkan kode pesanan, gunakan kode pesanan pending yang tercatat di riwayat "PESANAN TERAKHIR DARI NOMOR INI" di atas.
    - JANGAN PERNAH menyatakan pesanan sudah Lunas (PAID) dalam teks balasan tanpa berhasil mengeksekusi tool database terlebih dahulu!
-5. Jangan gunakan tanda pagar tiga (###) dalam pesan WhatsApp Anda. Gunakan format WhatsApp yang rapi (*tebal*, _miring_, poin-poin).`
+5. SANGAT PENTING - TANYAKAN RATING SAAT PESANAN SUDAH DIBAYAR (PAID):
+   - Begitu Anda berhasil memverifikasi pembayaran pembeli (memanggil confirm_buyer_payment atau update_order_status PAID), konfirmasikan bahwa pembayaran telah diterima/lunas, dan Anda WAJIB LANGSUNG MENANYAKAN RATING KEPUASAN (1 sampai 5 bintang) di akhir pesan tersebut! (Contoh: "Pembayaran telah kami terima dan diverifikasi ya Kak! Boleh bantu berikan rating kepuasan 1 - 5 bintang ⭐ untuk pelayanan kami hari ini? Cukup balas angka 1-5 beserta kesan Kakak ya 😊").
+   - Jika pembeli membalas dengan memberikan rating kepuasan (misal angka 1, 2, 3, 4, atau 5, atau ulasan bintang), Anda WAJIB MEMANGGIL tool "submit_customer_review" untuk menyimpan ulasan tersebut ke database toko, lalu ucapkan terima kasih yang tulus!
+6. Jangan gunakan tanda pagar tiga (###) dalam pesan WhatsApp Anda. Gunakan format WhatsApp yang rapi (*tebal*, _miring_, poin-poin).`
 
   // Define Function Calling Tools for REST API
   const tools = [
@@ -233,6 +236,28 @@ ATURAN UTAMA ANDA:
               notes: { type: 'STRING', description: 'Catatan perubahan status' },
             },
             required: ['status'],
+          },
+        },
+        {
+          name: 'submit_customer_review',
+          description: 'Menyimpan ulasan dan rating kepuasan pembeli (1 sampai 5 bintang) beserta komentar ulasan ke sistem database toko.',
+          parameters: {
+            type: 'OBJECT',
+            properties: {
+              rating: {
+                type: 'INTEGER',
+                description: 'Nilai rating kepuasan dari 1 sampai 5 bintang (1 terendah, 5 terbaik)',
+              },
+              comment: {
+                type: 'STRING',
+                description: 'Komentar atau kesan ulasan dari pembeli',
+              },
+              order_code: {
+                type: 'STRING',
+                description: 'Kode pesanan yang diulas jika ada (opsional)',
+              },
+            },
+            required: ['rating'],
           },
         },
       ],
@@ -498,12 +523,60 @@ ATURAN UTAMA ANDA:
             success: true,
             order_code: updatedOrderCode,
             new_status: targetStatus,
-            message: `Status pesanan ${updatedOrderCode} berhasil diubah menjadi ${targetStatus} di database.`,
+            message: targetStatus === 'PAID'
+              ? `Status pesanan ${updatedOrderCode} berhasil diubah menjadi PAID (Lunas) di database. Konfirmasikan bahwa pembayaran telah diverifikasi, dan WAJIB LANGSUNG TANYAKAN rating kepuasan (1-5 bintang) kepada pembeli di pesan ini!`
+              : `Status pesanan ${updatedOrderCode} berhasil diubah menjadi ${targetStatus} di database.`,
           }
         } else {
           toolResult = {
             success: false,
             message: 'Tidak ditemukan pesanan pending yang sesuai untuk nomor WhatsApp Anda atau database gagal diperbarui.',
+          }
+        }
+      } else if (fnName === 'submit_customer_review') {
+        const rating = Math.min(5, Math.max(1, parseInt(String(fnArgs.rating || 5), 10)))
+        const comment = String(fnArgs.comment || 'Pelayanan sangat memuaskan!').trim()
+        const targetCode = fnArgs.order_code ? String(fnArgs.order_code).replace(/^#/, '').trim() : ''
+
+        let matchedOrderId: string | null = null
+        let buyerName = senderName || 'Pembeli'
+
+        if (recentOrders && recentOrders.length > 0) {
+          const matched = targetCode
+            ? recentOrders.find((o: any) => o.order_code && o.order_code.includes(targetCode))
+            : recentOrders[0]
+          if (matched) {
+            matchedOrderId = matched.id
+            if (matched.buyer_name) buyerName = matched.buyer_name
+          }
+        }
+
+        const { data: newRev, error: revErr } = await supabase
+          .from('reviews')
+          .insert([
+            {
+              store_id: store.id,
+              order_id: matchedOrderId,
+              buyer_name: buyerName,
+              rating,
+              comment,
+            },
+          ])
+          .select()
+          .maybeSingle()
+
+        if (!revErr && newRev) {
+          toolResult = {
+            success: true,
+            rating,
+            comment,
+            message: `Ulasan bintang ${rating} berhasil disimpan ke database toko. Sampaikan terima kasih hangat kepada pembeli atas penilaiannya!`,
+          }
+        } else {
+          toolResult = {
+            success: true,
+            rating,
+            message: `Rating bintang ${rating} berhasil dicatat. Sampaikan terima kasih hangat kepada pembeli atas penilaiannya!`,
           }
         }
       }

@@ -121,11 +121,11 @@ export default async function handler(req: any, res: any) {
         break
 
       case 'COMPLETED':
-        messageText = `Halo Kak *${buyerName}*! 🎉\n\nPesanan Kakak:\n📋 Kode: *#${orderDisplayCode}*\n\nTelah dinyatakan:\n✅ *SELESAI (COMPLETED)*\n\nTerima kasih banyak telah berbelanja di *${storeName}*! Semoga produk yang diterima memuaskan dan bermanfaat ya Kak.\n\nJika Kakak berkenan, kami sangat menghargai ulasan atau testimoni pengalaman belanja Kakak di tautan berikut:\n⭐ https://tautan.site/${store.slug || ''}\n\nSampai jumpa di pesanan berikutnya! 🙏`
+        messageText = `Halo Kak *${buyerName}*! 🎉\n\nPesanan Kakak:\n📋 Kode: *#${orderDisplayCode}*\n\nTelah dinyatakan:\n✅ *SELESAI (COMPLETED)*\n\nTerima kasih banyak telah berbelanja di *${storeName}*! Semoga produk yang diterima memuaskan dan bermanfaat ya Kak.\n\nJika Kakak berkenan, kami sangat menghargai ulasan atau testimoni pengalaman belanja Kakak di tautan berikut:\n⭐ tautanAI/${store.slug || ''}\n\nSampai jumpa di pesanan berikutnya! 🙏`
         break
 
       case 'PAID':
-        messageText = `Halo Kak *${buyerName}*! 🙏\n\nPembayaran pesanan Kakak telah berhasil diverifikasi oleh tim *${storeName}*:\n📋 Kode Pesanan: *#${orderDisplayCode}*\n💰 Total Tagihan: *Rp${Number(order.total_amount || order.subtotal).toLocaleString('id-ID')}*\n\nStatus saat ini:\n✅ *LUNAS (PAID)*\n\nPesanan Kakak akan segera masuk ke tahap pemrosesan dan pengemasan. Terima kasih banyak! 😊`
+        messageText = `Halo Kak *${buyerName}*! 🙏\n\nPembayaran pesanan Kakak telah berhasil diverifikasi oleh tim *${storeName}*:\n📋 Kode Pesanan: *#${orderDisplayCode}*\n💰 Total Tagihan: *Rp${Number(order.total_amount || order.subtotal).toLocaleString('id-ID')}*\n\nStatus saat ini:\n✅ *LUNAS (PAID)*\n\nPesanan Kakak sedang kami siapkan dan segera diproses ya! 📦\n\n⭐ *Pertanyaan Kepuasan Pelanggan:*\nBagaimana pelayanan kami sejauh ini? Boleh bantu berikan rating *1 - 5 bintang*? (Cukup balas pesan ini dengan angka *1* sampai *5* beserta kesan/masukan Kakak ya!).\n\nTerima kasih banyak! 😊`
         break
 
       case 'CANCELLED':
