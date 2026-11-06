@@ -91,13 +91,7 @@ export function Navbar() {
                 <span>Kelola Pesanan</span>
               </Link>
             </nav>
-          ) : (
-            <nav className="hidden sm:flex items-center gap-2 text-xs text-[#706c64]">
-              <Link to="/" className="hover:text-[#141413]">Beranda</Link>
-              <span>•</span>
-              <span className="text-[#141413] font-medium">Etalase Toko</span>
-            </nav>
-          )}
+          ) : null}
 
           {/* Right Action: Auth / Logout / Mulai Gratis */}
           <div className="flex items-center gap-2.5">
