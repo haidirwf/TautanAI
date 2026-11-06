@@ -161,7 +161,7 @@ export function SettingsPage() {
             Pengaturan Toko & AI Agent
           </h1>
           <p className="text-xs sm:text-sm text-[#706c64] mt-0.5">
-            Kelola profil toko, etalase tautan, serta konfigurasi agen penjualan WhatsApp bertenaga Google Gemini.
+            Kelola profil toko, etalase tautan, serta konfigurasi agen penjualan WhatsApp otonom.
           </p>
         </div>
 
@@ -331,12 +331,12 @@ export function SettingsPage() {
             </div>
           </div>
 
-          {/* Card 2: AI WhatsApp Sales Agent (Gemini + Fonnte) */}
+          {/* Card 2: AI WhatsApp Sales Agent */}
           <div className="flex flex-col gap-5 p-6 sm:p-7 rounded-2xl border border-[#e8e2d9] bg-white shadow-2xs">
             <div className="flex items-center justify-between pb-3 border-b border-[#e8e2d9]">
               <div>
                 <h2 className="text-sm font-bold text-[#141413] tracking-tight">
-                  AI WhatsApp Sales Agent (Google Gemini)
+                  AI WhatsApp Sales Agent
                 </h2>
                 <p className="text-xs text-[#706c64] mt-0.5">
                   Asisten pintar otonom yang melayani pemesanan, tanya-jawab stok, dan pembaruan status transaksi.
@@ -403,7 +403,7 @@ export function SettingsPage() {
               <div>
                 <label className="text-xs font-semibold text-[#141413] flex items-center gap-1.5 mb-1.5">
                   <Sliders className="size-3.5 text-[#706c64]" />
-                  <span>Model Gemini AI</span>
+                  <span>Model AI</span>
                 </label>
                 <select
                   value={aiModel}
