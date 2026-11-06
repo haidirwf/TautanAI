@@ -13,6 +13,7 @@ import {
   CheckCheck,
   ShieldCheck,
   Zap,
+  MapPin,
 } from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -184,6 +185,10 @@ export function LandingPage() {
       q: 'Apakah ada potongan komisi dari setiap transaksi penjualan?',
       a: 'Sama sekali tidak ada potongan (0% platform fee). Semua pembayaran dari pembeli langsung ditransfer 100% ke rekening bank atau QRIS pribadi yang Anda cantumkan di pengaturan toko.',
     },
+    {
+      q: 'Mengapa tautanAI sangat cocok untuk pelaku usaha & UMKM di Bali?',
+      a: 'Aktivitas bisnis di Bali bergerak dinamis sepanjang hari karena tingginya interaksi wisatawan dan pelanggan dari berbagai wilayah. tautanAI memastikan etalase toko tetap melayani tanya stok, mengunci order, dan memverifikasi transfer m-Banking / QRIS secara otonom bahkan saat penjual sedang sibuk atau melayani pelanggan offline.',
+    },
   ]
 
   return (
@@ -198,12 +203,18 @@ export function LandingPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center w-full py-4 lg:py-6">
           {/* Left Column: Headline, Subtitle, Claim Input, Trust */}
           <div className="lg:col-span-7 flex flex-col items-start text-left">
+            {/* Bali Local Innovation Tag */}
+            <div className="hero-headline inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#faf4ed] border border-[#cc785c]/30 text-xs text-[#8c4327] font-semibold mb-3.5 shadow-2xs">
+              <MapPin className="size-3.5 text-[#cc785c] shrink-0" />
+              <span>Inovasi Digital untuk Ekosistem UMKM & Ekonomi Kreatif Bali</span>
+            </div>
+
             <h1 className="hero-headline font-sans text-3xl sm:text-5xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight text-[#141413] leading-[1.08] max-w-2xl">
               Etalase tokomu, kini berjualan otomatis dengan <span className="text-[#cc785c]">Asisten WhatsApp 24/7.</span>
             </h1>
 
             <p className="hero-sub mt-4 text-sm sm:text-base lg:text-lg text-[#5c5850] max-w-xl leading-relaxed font-normal">
-              Buka link-in-bio belanja modern dalam 30 detik. Biarkan asisten AI otonom melayani tanya stok, merekap pesanan, dan memverifikasi bukti transfer langsung di WhatsApp tanpa jeda.
+              Buka link-in-bio belanja modern dalam 30 detik. Dirancang khusus untuk wirausaha kuliner, kriya pengrajin, dan kreator lokal Bali—asisten AI otonom melayani tanya stok, merekap pesanan, dan memverifikasi transfer m-Banking langsung di WhatsApp tanpa jeda.
             </p>
 
             {/* Minimal Claim Input */}
@@ -258,11 +269,11 @@ export function LandingPage() {
                 <div className="flex items-center justify-between pb-3.5 border-b border-[#f0ece5]">
                   <div className="flex items-center gap-3">
                     <div className="size-11 rounded-full bg-[#cc785c] text-white flex items-center justify-center font-bold text-sm shadow-2xs">
-                      KS
+                      KK
                     </div>
                     <div>
-                      <h2 className="font-extrabold text-sm text-[#141413]">Kedai Kopi Senja</h2>
-                      <span className="text-xs font-mono text-[#8c867b]">tautanAI/senja</span>
+                      <h2 className="font-extrabold text-sm text-[#141413]">Kopi Kintamani Roastery</h2>
+                      <span className="text-xs font-mono text-[#8c867b]">tautanAI/kintamani</span>
                     </div>
                   </div>
                   <div className="px-2.5 py-1 rounded-md bg-[#faf4ed] text-[#8c4327] border border-[#cc785c]/25 text-[11px] font-semibold flex items-center gap-1.5 shrink-0">
@@ -275,15 +286,15 @@ export function LandingPage() {
                 <div className="py-3 flex items-center justify-between gap-3 bg-[#faf9f5] px-3.5 rounded-2xl border border-[#e6dfd8] my-3">
                   <img
                     src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=200&auto=format&fit=crop&q=80"
-                    alt="Kopi Susu Aren"
+                    alt="Arabika Kintamani Natural"
                     className="size-10 rounded-xl object-cover shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <span className="text-xs font-bold text-[#141413] block truncate">Kopi Susu Aren</span>
-                    <span className="text-xs font-mono text-[#cc785c] font-bold">{formatIDR(22000)}</span>
+                    <span className="text-xs font-bold text-[#141413] block truncate">Arabika Kintamani Natural</span>
+                    <span className="text-xs font-mono text-[#cc785c] font-bold">{formatIDR(68000)}</span>
                   </div>
                   <span className="text-[10px] font-mono text-[#706c64] bg-white px-2 py-0.5 rounded border border-[#e6dfd8]">
-                    Stok: 12 cup
+                    Stok: 15 pack
                   </span>
                 </div>
 
@@ -292,7 +303,7 @@ export function LandingPage() {
                   {/* Buyer Message 1 */}
                   <div className="flex justify-end">
                     <div className="max-w-[85%] rounded-2xl rounded-tr-xs bg-[#e7fedb] border border-[#cbebb5] text-[#141413] p-2.5 text-xs shadow-2xs">
-                      <p className="leading-snug">Kak, Kopi Susu Aren ready dingin 2 cup? Mau kirim ke Renon.</p>
+                      <p className="leading-snug">Om Swastyastu Kak, Kopi Arabika Kintamani ready 2 pack? Mau kirim ke Renon.</p>
                       <span className="text-[9px] text-[#6c855a] font-mono block text-right mt-1">10:14</span>
                     </div>
                   </div>
@@ -301,10 +312,10 @@ export function LandingPage() {
                   <div className="flex justify-start">
                     <div className="max-w-[88%] rounded-2xl rounded-tl-xs bg-white border border-[#e6dfd8] text-[#141413] p-2.5 text-xs shadow-2xs">
                       <p className="leading-snug">
-                        Halo Kak! Kopi Susu Aren dingin <span className="font-bold text-[#141413]">ready 2 cup</span>. Ke Renon siap langsung dikirim via kurir instan ya kak.
+                        Om Swastyastu Kak! Arabika Kintamani freshly roasted <span className="font-bold text-[#141413]">ready 2 pack</span>. Pengiriman ke Renon siap kami proses via kurir instan ya kak. Suksma! 🙏
                       </p>
                       <div className="mt-1.5 pt-1.5 border-t border-[#f0ece5] flex items-center justify-between text-[10px] font-mono text-[#706c64]">
-                        <span>Total 2 Cup: {formatIDR(44000)}</span>
+                        <span>Total 2 Pack: {formatIDR(136000)}</span>
                         <span className="text-[9px] text-[#8c867b]">10:14</span>
                       </div>
                     </div>
@@ -315,9 +326,9 @@ export function LandingPage() {
                     <div className="max-w-[85%] rounded-2xl rounded-tr-xs bg-[#e7fedb] border border-[#cbebb5] text-[#141413] p-2 text-xs shadow-2xs">
                       <div className="flex items-center gap-2 bg-white/70 p-1.5 rounded-lg border border-[#cbebb5]/80 mb-1">
                         <CheckCheck className="size-3.5 text-emerald-700 shrink-0" />
-                        <span className="text-[11px] font-mono font-medium truncate">struk_bca_44000.jpg</span>
+                        <span className="text-[11px] font-mono font-medium truncate">struk_bca_136000.jpg</span>
                       </div>
-                      <p className="text-[11px] leading-tight">Sudah saya transfer kak, mohon dicek yaa</p>
+                      <p className="text-[11px] leading-tight">Sudah ditransfer nggih kak, mohon dicek yaa</p>
                       <span className="text-[9px] text-[#6c855a] font-mono block text-right mt-0.5">10:15</span>
                     </div>
                   </div>
@@ -327,10 +338,10 @@ export function LandingPage() {
                     <div className="max-w-[88%] rounded-2xl rounded-tl-xs bg-[#faf8f5] border border-[#e8e2d9] text-[#141413] p-2.5 text-xs shadow-2xs">
                       <div className="flex items-center gap-1.5 text-emerald-800 text-[11px] font-semibold mb-1">
                         <ShieldCheck className="size-3.5 text-emerald-600" />
-                        <span>Transfer Rp44.000 Terverifikasi Otomatis</span>
+                        <span>Transfer Rp136.000 Terverifikasi Otomatis</span>
                       </div>
                       <p className="text-[11px] text-[#5c5850] leading-snug">
-                        Pesanan <span className="font-mono font-bold text-[#141413]">#ORD-8821</span> berstatus <span className="text-emerald-700 font-bold">LUNAS</span>. Sedang disiapkan barista!
+                        Pesanan <span className="font-mono font-bold text-[#141413]">#ORD-8821</span> berstatus <span className="text-emerald-700 font-bold">LUNAS</span>. Sedang dikemas barista untuk pengiriman ke Renon! Suksma Kak!
                       </p>
                       <span className="text-[9px] text-[#8c867b] font-mono block text-right mt-1">10:15</span>
                     </div>
@@ -349,6 +360,44 @@ export function LandingPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ==================================================================== */}
+      {/* BALI CREATIVE COMMERCE SHOWCASE (Local Ecosystem Empowerment) */}
+      {/* ==================================================================== */}
+      <section className="border-t border-[#e6dfd8] bg-[#fbf9f4] px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-8">
+          <div className="max-w-md text-left">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-[#cc785c] font-bold flex items-center gap-1.5 mb-1">
+              <MapPin className="size-3.5 text-[#cc785c]" />
+              Kearifan Lokal Bali • Akselerasi Digital
+            </span>
+            <h2 className="font-sans text-xl sm:text-2xl font-extrabold text-[#141413] tracking-tight leading-snug">
+              Dukungan Otonom untuk Wirausaha & Kreator Pulau Dewata
+            </h2>
+            <p className="text-xs sm:text-sm text-[#5c5850] mt-1.5 leading-relaxed">
+              Mulai dari kedai kopi artisan Kintamani, sentra tenun Endek, hingga kriya perak Gianyar—tautanAI memadukan keramahan pelayanan khas Bali dengan kecepatan asisten AI 24/7.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full lg:w-auto">
+            {[
+              { label: 'Kopi Kintamani & F&B', area: 'Denpasar & Canggu', icon: '☕' },
+              { label: 'Tenun & Endek Bali', area: 'Klungkung & Gianyar', icon: '🧵' },
+              { label: 'Wellness & Spa Herbal', area: 'Ubud & Seminyak', icon: '🌿' },
+              { label: 'Perak & Kriya Seni', area: 'Celuk & Sukawati', icon: '💍' },
+            ].map((item, idx) => (
+              <div
+                key={idx}
+                className="p-3.5 rounded-2xl bg-white border border-[#e6dfd8] shadow-2xs text-left hover:border-[#cc785c]/40 hover:-translate-y-0.5 transition-all"
+              >
+                <span className="text-xl block mb-2">{item.icon}</span>
+                <span className="font-bold text-xs text-[#141413] block truncate">{item.label}</span>
+                <span className="text-[10px] font-mono text-[#8c867b] block truncate mt-0.5">{item.area}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -384,7 +433,7 @@ export function LandingPage() {
                   Menjawab Tanya Stok, Varian, & <span className="text-[#cc785c]">Rekomendasi Produk Seketika</span>
                 </h3>
                 <p className="text-sm text-[#5c5850] leading-relaxed max-w-xl">
-                  Asisten AI membaca katalog aktif dan catatan instruksi khusus toko Anda secara langsung. Saat pembeli bertanya ketersediaan stok, ukuran baju, atau bahan masakan, AI merespons hangat sesuai gaya bahasa merek Anda.
+                  Asisten AI membaca katalog aktif dan instruksi toko Anda secara real-time. Dilatih dengan keramahan khas Bali (*hospitality* yang hangat & santun), AI merespons sigap saat pembeli bertanya stok, varian, hingga rekomendasi produk lokal.
                 </p>
               </div>
 
@@ -393,26 +442,26 @@ export function LandingPage() {
                 <div className="p-3.5 rounded-2xl bg-white border border-[#e6dfd8] flex items-center gap-3 shadow-2xs transition-all hover:border-[#cc785c]/40 hover:-translate-y-0.5">
                   <img
                     src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=200&auto=format&fit=crop&q=80"
-                    alt="Kopi"
+                    alt="Kopi Arabika Kintamani"
                     className="size-12 rounded-xl object-cover"
                   />
                   <div>
-                    <span className="text-xs font-bold text-[#141413] block">Kopi Susu Aren</span>
-                    <span className="text-xs font-mono font-bold text-[#cc785c]">Rp 22.000</span>
+                    <span className="text-xs font-bold text-[#141413] block">Arabika Kintamani</span>
+                    <span className="text-xs font-mono font-bold text-[#cc785c]">Rp 68.000</span>
                     <span className="text-[10px] text-[#8c867b] block">Stok Sinkron Realtime</span>
                   </div>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-white border border-[#e6dfd8] flex items-center gap-3 shadow-2xs transition-all hover:border-[#cc785c]/40 hover:-translate-y-0.5">
                   <img
-                    src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=200&auto=format&fit=crop&q=80"
-                    alt="Pastry"
+                    src="https://images.unsplash.com/photo-1607344645866-009c320c5ab8?w=200&auto=format&fit=crop&q=80"
+                    alt="Kain Tenun Endek Bali"
                     className="size-12 rounded-xl object-cover"
                   />
                   <div>
-                    <span className="text-xs font-bold text-[#141413] block">Artisan Croissant</span>
-                    <span className="text-xs font-mono font-bold text-[#cc785c]">Rp 18.000</span>
-                    <span className="text-[10px] text-[#8c867b] block">Varian Terpilih Otomatis</span>
+                    <span className="text-xs font-bold text-[#141413] block">Kain Endek Mastuli</span>
+                    <span className="text-xs font-mono font-bold text-[#cc785c]">Rp 185.000</span>
+                    <span className="text-[10px] text-[#8c867b] block">Motif Tradisional Bali</span>
                   </div>
                 </div>
               </div>
@@ -679,7 +728,7 @@ export function LandingPage() {
         </div>
 
         <div className="max-w-6xl mx-auto mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between text-[11px] text-[#8c867b]">
-          <span>© 2026 tautanAI. Didedikasikan untuk pelaku usaha mandiri & kreator Indonesia.</span>
+          <span>© 2026 tautanAI. Karya digital untuk akselerasi UMKM, pengrajin lokal Bali, dan kreator Nusantara.</span>
           <span className="font-medium text-[#141413]">0% Potongan Komisi</span>
         </div>
       </footer>

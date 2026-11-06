@@ -198,6 +198,25 @@ export function AuthPage() {
               <span>{loading ? 'Memproses...' : isLogin ? 'Masuk ke Dashboard' : 'Klaim Toko & Buka Dashboard'}</span>
               <ArrowRight className="size-4" />
             </Button>
+
+            {isLogin && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('demo@tautan.site')
+                    setPassword('demo123456password')
+                  }}
+                  className="w-full py-2 px-3 rounded-lg bg-[#faf8f5] hover:bg-[#fae7e0]/40 border border-[#e8e2d9] text-xs font-medium text-[#141413] flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span className="font-semibold text-[#cc785c]">Akun Demo:</span>
+                    <span className="text-[#5c5850]">Kopi & Oleh-oleh Bali</span>
+                  </span>
+                  <span className="text-[11px] font-medium text-[#cc785c]">Gunakan Kredensial Demo</span>
+                </button>
+              </div>
+            )}
           </form>
 
           {/* Footer switch */}
