@@ -63,19 +63,12 @@ export async function processIncomingWhatsAppMessage(
   const altPhone = cleanPhone.startsWith('62') ? '0' + cleanPhone.slice(2) : cleanPhone
 
   // 2. Fetch Catalog, Recent Orders, and Previous Chat History in parallel
-  const [productsRes, ordersRes, chatRes] = await Promise.all([
+  const [productsRes, chatRes] = await Promise.all([
     supabase
       .from('products')
       .select('*, variant_groups(*, variant_options(*))')
       .eq('store_id', store.id)
       .eq('is_active', true),
-    supabase
-      .from('orders')
-      .select('*')
-      .eq('store_id', store.id)
-      .or(`buyer_phone.eq.${cleanPhone},buyer_phone.eq.${altPhone}`)
-      .order('created_at', { ascending: false })
-      .limit(3),
     supabase
       .from('ai_chat_sessions')
       .select('*')
@@ -85,8 +78,33 @@ export async function processIncomingWhatsAppMessage(
       .limit(8),
   ])
 
+  // Fetch recent buyer orders: try RPC first (SECURITY DEFINER to bypass RLS safely), then fallback to direct query
+  let recentOrders: any[] = []
+  try {
+    const { data: rpcOrders, error: rpcErr } = await supabase.rpc('get_buyer_orders_by_ai', {
+      p_store_id: store.id,
+      p_buyer_phone: cleanPhone,
+      p_alt_phone: altPhone,
+    })
+    if (!rpcErr && rpcOrders && Array.isArray(rpcOrders) && rpcOrders.length > 0) {
+      recentOrders = rpcOrders
+    } else {
+      const { data: directOrders } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('store_id', store.id)
+        .or(`buyer_phone.eq.${cleanPhone},buyer_phone.eq.${altPhone}`)
+        .order('created_at', { ascending: false })
+        .limit(3)
+      if (directOrders && directOrders.length > 0) {
+        recentOrders = directOrders
+      }
+    }
+  } catch (err) {
+    console.warn('Could not query recent orders via RPC:', err)
+  }
+
   const products: Product[] = (productsRes.data as Product[]) || []
-  const recentOrders: any[] = ordersRes.data || []
   const rawHistory: any[] = chatRes.data || []
 
   // Database-level deduplication: Handles both text messages and media attachments
@@ -347,87 +365,81 @@ ATURAN UTAMA ANDA:
         const targetStatus = String(fnArgs.status || 'PAID').toUpperCase()
         const notes = fnArgs.notes || fnArgs.payment_notes || (mediaUrl ? 'Bukti transfer terlampir' : 'Dikonfirmasi oleh pembeli via WA')
 
-        // 1. Match by specific order_code and buyer's phone
-        let matchedOrder: any = null
-        if (rawCode && rawCode.length >= 3) {
-          const { data } = await supabase
-            .from('orders')
-            .select('*')
-            .eq('store_id', store.id)
-            .or(`buyer_phone.eq.${cleanPhone},buyer_phone.eq.${altPhone}`)
-            .ilike('order_code', `%${rawCode}%`)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-          matchedOrder = data
+        let updatedSuccess = false
+        let updatedOrderCode = rawCode
+
+        // Method 1: Attempt update via PostgreSQL RPC (SECURITY DEFINER, completely bypasses RLS safely)
+        try {
+          const { data: rpcRes, error: rpcErr } = await supabase.rpc('update_order_status_by_ai', {
+            p_store_id: store.id,
+            p_order_id: null,
+            p_order_code: rawCode,
+            p_buyer_phone: cleanPhone,
+            p_status: targetStatus,
+            p_proof_url: mediaUrl || '',
+            p_notes: notes,
+          })
+
+          if (!rpcErr && rpcRes && rpcRes.success) {
+            updatedSuccess = true
+            updatedOrderCode = rpcRes.order_code || updatedOrderCode
+          } else if (rpcErr) {
+            console.warn('RPC update_order_status_by_ai notice:', rpcErr.message)
+          }
+        } catch (rpcEx) {
+          console.warn('RPC call exception:', rpcEx)
         }
 
-        // 2. If not matched with phone but order code is sufficiently distinct (>= 6 chars)
-        if (!matchedOrder && rawCode && rawCode.length >= 6) {
-          const { data } = await supabase
-            .from('orders')
-            .select('*')
-            .eq('store_id', store.id)
-            .ilike('order_code', `%${rawCode}%`)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-          matchedOrder = data
-        }
+        // Method 2: If RPC not yet installed or failed, use direct table matching + update fallback
+        if (!updatedSuccess) {
+          let matchedOrder: any = null
+          if (rawCode && rawCode.length >= 3) {
+            const { data } = await supabase
+              .from('orders')
+              .select('*')
+              .eq('store_id', store.id)
+              .or(`buyer_phone.eq.${cleanPhone},buyer_phone.eq.${altPhone}`)
+              .ilike('order_code', `%${rawCode}%`)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+            matchedOrder = data
+          }
 
-        // 3. Fallback: If no code or not found, match the buyer's most recent pending order
-        if (!matchedOrder) {
-          const { data } = await supabase
-            .from('orders')
-            .select('*')
-            .eq('store_id', store.id)
-            .or(`buyer_phone.eq.${cleanPhone},buyer_phone.eq.${altPhone}`)
-            .in('status', ['PENDING_WA', 'PENDING'])
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-          matchedOrder = data
-        }
+          if (!matchedOrder && rawCode && rawCode.length >= 6) {
+            const { data } = await supabase
+              .from('orders')
+              .select('*')
+              .eq('store_id', store.id)
+              .ilike('order_code', `%${rawCode}%`)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+            matchedOrder = data
+          }
 
-        // 4. Fallback: match from recentOrders context
-        if (!matchedOrder && recentOrders && recentOrders.length > 0) {
-          matchedOrder = recentOrders.find((o: any) => o.status === 'PENDING_WA' || o.status === 'PENDING')
-        }
+          if (!matchedOrder) {
+            const { data } = await supabase
+              .from('orders')
+              .select('*')
+              .eq('store_id', store.id)
+              .or(`buyer_phone.eq.${cleanPhone},buyer_phone.eq.${altPhone}`)
+              .in('status', ['PENDING_WA', 'PENDING'])
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+            matchedOrder = data
+          }
 
-        if (matchedOrder) {
-          if (matchedOrder.status === targetStatus) {
-            toolResult = {
-              success: true,
-              order_code: matchedOrder.order_code,
-              status: matchedOrder.status,
-              message: `Pesanan ${matchedOrder.order_code} sudah berstatus ${matchedOrder.status}.`,
-            }
-          } else {
-            let updatedSuccess = false
-            let updatedOrderCode = matchedOrder.order_code
+          if (!matchedOrder && recentOrders && recentOrders.length > 0) {
+            matchedOrder = recentOrders.find((o: any) => o.status === 'PENDING_WA' || o.status === 'PENDING')
+          }
 
-            // Step A: Attempt update via PostgreSQL RPC (SECURITY DEFINER, completely bypasses RLS safely)
-            try {
-              const { data: rpcRes, error: rpcErr } = await supabase.rpc('update_order_status_by_ai', {
-                p_order_id: matchedOrder.id,
-                p_store_id: store.id,
-                p_status: targetStatus,
-                p_proof_url: mediaUrl || matchedOrder.payment_proof_url || '',
-                p_notes: notes,
-              })
-
-              if (!rpcErr && rpcRes && rpcRes.success) {
-                updatedSuccess = true
-                updatedOrderCode = rpcRes.order_code || updatedOrderCode
-              } else if (rpcErr) {
-                console.warn('RPC update_order_status_by_ai warning:', rpcErr.message)
-              }
-            } catch (rpcEx) {
-              console.warn('RPC call exception:', rpcEx)
-            }
-
-            // Step B: Direct table update fallback (supported by "Allow AI order updates" policy)
-            if (!updatedSuccess) {
+          if (matchedOrder) {
+            if (matchedOrder.status === targetStatus) {
+              updatedSuccess = true
+              updatedOrderCode = matchedOrder.order_code
+            } else {
               const patchData: any = {
                 status: targetStatus,
                 managed_by_ai: true,
@@ -453,27 +465,22 @@ ATURAN UTAMA ANDA:
                 console.error('Direct order update error:', directErr)
               }
             }
+          }
+        }
 
-            if (updatedSuccess) {
-              orderUpdated = true
-              targetOrderCode = updatedOrderCode
-              toolResult = {
-                success: true,
-                order_code: updatedOrderCode,
-                new_status: targetStatus,
-                message: `Status pesanan ${updatedOrderCode} berhasil diubah menjadi ${targetStatus} di database.`,
-              }
-            } else {
-              toolResult = {
-                success: false,
-                message: `Gagal memperbarui status pesanan ${matchedOrder.order_code} di database toko.`,
-              }
-            }
+        if (updatedSuccess) {
+          orderUpdated = true
+          targetOrderCode = updatedOrderCode
+          toolResult = {
+            success: true,
+            order_code: updatedOrderCode,
+            new_status: targetStatus,
+            message: `Status pesanan ${updatedOrderCode} berhasil diubah menjadi ${targetStatus} di database.`,
           }
         } else {
           toolResult = {
             success: false,
-            message: 'Tidak ditemukan pesanan pending yang sesuai untuk nomor WhatsApp Anda. Mohon sertakan kode pesanan (misal: ORD-...).',
+            message: 'Tidak ditemukan pesanan pending yang sesuai untuk nomor WhatsApp Anda atau database gagal diperbarui.',
           }
         }
       }
