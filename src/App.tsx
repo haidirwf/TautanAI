@@ -40,6 +40,7 @@ function AppContent() {
     '/ulasan',
     '/laporan',
     '/pengaturan',
+    '/settings',
   ].some((r) => location.pathname.startsWith(r))
   const isStandaloneLayout =
     isDashboardRoute ||
@@ -79,6 +80,8 @@ function AppContent() {
                 <Route path="/dashboard/ulasan" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/laporan" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
                 <Route path="/dashboard/pengaturan" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/setting" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
                 {/* Backward compatibility aliases */}
                 <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
@@ -87,6 +90,7 @@ function AppContent() {
                 <Route path="/ulasan" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
                 <Route path="/laporan" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
                 <Route path="/pengaturan" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
                 <Route path="/:slug" element={<StorefrontPage />} />
               </Routes>
