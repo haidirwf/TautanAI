@@ -7,6 +7,9 @@ interface CustomerInfo {
   phone: string
   address: string
   notes: string
+  paymentMethod?: string
+  senderName?: string
+  senderAccount?: string
 }
 
 interface CartState {
@@ -33,6 +36,9 @@ export const useCartStore = create<CartState>()(
         phone: '',
         address: '',
         notes: '',
+        paymentMethod: 'Transfer BCA',
+        senderName: '',
+        senderAccount: '',
       },
 
       addItem: (product, selectedVariants = {}, quantity = 1) => {

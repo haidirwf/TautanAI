@@ -133,6 +133,8 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_fee INT DEFAULT 0,                     -- Manual shipping fee agreed via WA
   total_amount INT NOT NULL,                      -- subtotal + shipping_fee
   payment_method TEXT DEFAULT 'MANUAL_TRANSFER',  -- 'Transfer BCA', 'Mandiri', 'QRIS', 'COD'
+  payment_sender_name TEXT DEFAULT '',            -- Nama pemilik rekening / akun e-wallet pengirim
+  payment_sender_account TEXT DEFAULT '',         -- Nomor rekening atau nomor HP e-wallet pengirim
   status TEXT DEFAULT 'PENDING_WA',               -- 'PENDING_WA', 'PAID', 'PROCESSING', 'SHIPPED', 'COMPLETED', 'CANCELLED'
   courier_name TEXT DEFAULT '',                   -- e.g. 'JNE Regular', 'J&T', 'SiCepat'
   tracking_number TEXT DEFAULT '',                -- Resi pengiriman
@@ -153,6 +155,8 @@ CREATE TABLE IF NOT EXISTS orders (
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_notes TEXT DEFAULT '';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_fee INT DEFAULT 0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'MANUAL_TRANSFER';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_sender_name TEXT DEFAULT '';
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_sender_account TEXT DEFAULT '';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS courier_name TEXT DEFAULT '';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number TEXT DEFAULT '';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS seller_internal_note TEXT DEFAULT '';

@@ -43,7 +43,19 @@ export function generateOrderCode(): string {
 }
 
 export function buildWhatsAppOrderMessage(
-  order: Pick<Order, 'order_code' | 'buyer_name' | 'buyer_phone' | 'shipping_address' | 'order_notes' | 'items_snapshot' | 'subtotal'>,
+  order: Pick<
+    Order,
+    | 'order_code'
+    | 'buyer_name'
+    | 'buyer_phone'
+    | 'shipping_address'
+    | 'order_notes'
+    | 'items_snapshot'
+    | 'subtotal'
+    | 'payment_method'
+    | 'payment_sender_name'
+    | 'payment_sender_account'
+  >,
   store: Store
 ): string {
   const itemsText = order.items_snapshot
@@ -69,12 +81,21 @@ export function buildWhatsAppOrderMessage(
     `*Subtotal:* ${formatIDR(order.subtotal)}`,
   ]
 
+  if (order.payment_method || order.payment_sender_name || order.payment_sender_account) {
+    lines.push(``)
+    lines.push(`*Data Pembayaran Pengirim:*`)
+    if (order.payment_method) lines.push(`- Bank / E-Wallet: ${order.payment_method}`)
+    if (order.payment_sender_name) lines.push(`- Atas Nama Pengirim: ${order.payment_sender_name}`)
+    if (order.payment_sender_account) lines.push(`- No. Rekening / No. HP: ${order.payment_sender_account}`)
+  }
+
   if (order.order_notes?.trim()) {
+    lines.push(``)
     lines.push(`*Catatan:* ${order.order_notes.trim()}`)
   }
 
   lines.push(``)
-  lines.push(`Mohon info rekening untuk pembayaran dan estimasi ongkirnya ya kak. Terima kasih!`)
+  lines.push(`Mohon konfirmasi pesanan dan estimasi pengirimannya ya kak. Terima kasih!`)
 
   return lines.join('\n')
 }

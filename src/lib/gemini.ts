@@ -201,6 +201,9 @@ ATURAN UTAMA ANDA:
               product_id: { type: 'STRING', description: 'ID produk yang dipesan' },
               quantity: { type: 'INTEGER', description: 'Jumlah barang' },
               variant_info: { type: 'STRING', description: 'Pilihan varian (misal: Ukuran XL, Warna Hitam)' },
+              payment_method: { type: 'STRING', description: 'Bank atau E-wallet pembeli (misal: BCA, BRI, DANA)' },
+              sender_name: { type: 'STRING', description: 'Nama pemilik rekening / pengirim' },
+              sender_account: { type: 'STRING', description: 'Nomor rekening atau nomor HP e-wallet pengirim' },
             },
             required: ['buyer_name'],
           },
@@ -320,33 +323,53 @@ ATURAN UTAMA ANDA:
           }
         }
         const subtotal = unitPrice * qty
+        const paymentMethod = String(fnArgs.payment_method || 'MANUAL_TRANSFER')
+        const senderAccName = fnArgs.sender_name ? String(fnArgs.sender_name) : ''
+        const senderAccNo = fnArgs.sender_account ? String(fnArgs.sender_account) : ''
 
-        const { data: newOrder, error: orderErr } = await supabase
-          .from('orders')
-          .insert([{
-            store_id: store.id,
-            order_code: orderCode,
-            buyer_name: String(fnArgs.buyer_name || senderName || 'Pelanggan WhatsApp'),
-            buyer_phone: cleanPhone,
-            shipping_address: String(fnArgs.shipping_address || 'Menunggu konfirmasi alamat'),
+        const insertRow: Record<string, any> = {
+          store_id: store.id,
+          order_code: orderCode,
+          buyer_name: String(fnArgs.buyer_name || senderName || 'Pelanggan WhatsApp'),
+          buyer_phone: cleanPhone,
+          shipping_address: String(fnArgs.shipping_address || 'Menunggu konfirmasi alamat'),
+          subtotal,
+          shipping_fee: 0,
+          total_amount: subtotal,
+          payment_method: paymentMethod,
+          payment_sender_name: senderAccName,
+          payment_sender_account: senderAccNo,
+          status: 'PENDING_WA',
+          managed_by_ai: true,
+          ai_summary: `Dibuat via WhatsApp AI Copilot untuk ${prod ? prod.name : 'Produk'} (Qty: ${qty})`,
+          items_snapshot: [{
+            product_id: prod ? prod.id : '',
+            product_name: prod ? prod.name : 'Produk',
+            unit_price: unitPrice,
+            quantity: qty,
             subtotal,
-            shipping_fee: 0,
-            total_amount: subtotal,
-            payment_method: 'MANUAL_TRANSFER',
-            status: 'PENDING_WA',
-            managed_by_ai: true,
-            ai_summary: `Dibuat via WhatsApp AI Copilot untuk ${prod ? prod.name : 'Produk'} (Qty: ${qty})`,
-            items_snapshot: [{
-              product_id: prod ? prod.id : '',
-              product_name: prod ? prod.name : 'Produk',
-              unit_price: unitPrice,
-              quantity: qty,
-              subtotal,
-              variants: fnArgs.variant_info ? { info: String(fnArgs.variant_info) } : undefined,
-            }],
-          }])
+            variants: fnArgs.variant_info ? { info: String(fnArgs.variant_info) } : undefined,
+          }],
+        }
+
+        let { data: newOrder, error: orderErr } = await supabase
+          .from('orders')
+          .insert([insertRow])
           .select()
           .single()
+
+        // Fallback if payment_sender columns not yet in DB schema
+        if (orderErr && (orderErr.code === '42703' || orderErr.message?.includes('payment_sender'))) {
+          delete insertRow.payment_sender_name
+          delete insertRow.payment_sender_account
+          const retryRes = await supabase
+            .from('orders')
+            .insert([insertRow])
+            .select()
+            .single()
+          newOrder = retryRes.data
+          orderErr = retryRes.error
+        }
 
         if (!orderErr && newOrder) {
           orderCreated = true

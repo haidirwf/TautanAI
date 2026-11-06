@@ -101,6 +101,8 @@ export interface Order {
   shipping_fee: number
   total_amount: number
   payment_method: string
+  payment_sender_name?: string
+  payment_sender_account?: string
   status: OrderStatus
   courier_name?: string
   tracking_number?: string

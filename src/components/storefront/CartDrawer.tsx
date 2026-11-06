@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, MessageCircle, CheckCircle2, Star, Bot } from 'lucide-react'
+import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, MessageCircle, CheckCircle2, Star, Bot, CreditCard } from 'lucide-react'
 import type { Store, Order } from '@/types'
 import { formatIDR, sanitizeWhatsApp, generateOrderCode, buildWhatsAppOrderMessage } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -100,6 +100,12 @@ export function CartDrawer({ store }: CartDrawerProps) {
     if (!customerInfo.address.trim()) {
       errors.address = 'Alamat pengiriman wajib diisi'
     }
+    if (!customerInfo.senderName?.trim()) {
+      errors.senderName = 'Nama pemilik rekening / pengirim wajib diisi'
+    }
+    if (!customerInfo.senderAccount?.trim()) {
+      errors.senderAccount = 'Nomor rekening atau nomor e-wallet pengirim wajib diisi'
+    }
     setFormErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -148,7 +154,9 @@ export function CartDrawer({ store }: CartDrawerProps) {
         subtotal: subtotal,
         shipping_fee: 0,
         total_amount: subtotal,
-        payment_method: 'Belum Terkonfirmasi',
+        payment_method: customerInfo.paymentMethod || 'Transfer BCA',
+        payment_sender_name: customerInfo.senderName?.trim() || '',
+        payment_sender_account: customerInfo.senderAccount?.trim() || '',
         status: 'PENDING_WA',
         items_snapshot: itemsSnapshot,
       })
@@ -548,6 +556,85 @@ export function CartDrawer({ store }: CartDrawerProps) {
                     onChange={(e) => setCustomerInfo({ notes: e.target.value })}
                     className="w-full h-10 px-3.5 rounded-md bg-canvas border border-hairline text-sm text-ink placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                   />
+                </div>
+
+                {/* Data Rekening / E-Wallet Pengirim */}
+                <div className="pt-3 border-t border-hairline flex flex-col gap-3">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-ink">
+                    <CreditCard className="size-3.5 text-primary" />
+                    <span>Rekening / E-Wallet Pengirim</span>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-medium text-muted block mb-1">
+                      Bank atau E-Wallet Pengirim <span className="text-primary">*</span>
+                    </label>
+                    <select
+                      value={customerInfo.paymentMethod || 'Transfer BCA'}
+                      onChange={(e) => setCustomerInfo({ paymentMethod: e.target.value })}
+                      className="w-full h-10 px-3 rounded-md bg-canvas border border-hairline text-xs sm:text-sm text-ink focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer font-medium"
+                    >
+                      <optgroup label="Transfer Bank">
+                        <option value="Transfer BCA">Bank BCA</option>
+                        <option value="Transfer Mandiri">Bank Mandiri</option>
+                        <option value="Transfer BRI">Bank BRI</option>
+                        <option value="Transfer BNI">Bank BNI</option>
+                        <option value="Transfer BSI">Bank BSI (Syariah)</option>
+                        <option value="Transfer Bank Jago / SeaBank">Bank Jago / SeaBank</option>
+                        <option value="Transfer Bank Lainnya">Bank Lainnya</option>
+                      </optgroup>
+                      <optgroup label="E-Wallet">
+                        <option value="DANA">DANA</option>
+                        <option value="GoPay">GoPay</option>
+                        <option value="OVO">OVO</option>
+                        <option value="ShopeePay">ShopeePay</option>
+                        <option value="E-Wallet Lainnya">E-Wallet Lainnya</option>
+                      </optgroup>
+                      <optgroup label="Metode Lain">
+                        <option value="QRIS">QRIS</option>
+                        <option value="COD / Bayar di Tempat">COD / Bayar di Tempat</option>
+                      </optgroup>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[11px] font-medium text-muted block mb-1">
+                        Nama Pemilik / Pengirim <span className="text-primary">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Contoh: Budi Santoso"
+                        value={customerInfo.senderName || ''}
+                        onChange={(e) => setCustomerInfo({ senderName: e.target.value })}
+                        className="w-full h-10 px-3.5 rounded-md bg-canvas border border-hairline text-xs sm:text-sm text-ink placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      />
+                      {formErrors.senderName && (
+                        <span className="text-[11px] text-status-error mt-1 block">{formErrors.senderName}</span>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-medium text-muted block mb-1">
+                        No. Rekening / No. HP E-Wallet <span className="text-primary">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Contoh: 1234567890"
+                        value={customerInfo.senderAccount || ''}
+                        onChange={(e) => setCustomerInfo({ senderAccount: e.target.value })}
+                        className="w-full h-10 px-3.5 rounded-md bg-canvas border border-hairline text-xs sm:text-sm font-mono text-ink placeholder:text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      />
+                      {formErrors.senderAccount && (
+                        <span className="text-[11px] text-status-error mt-1 block">{formErrors.senderAccount}</span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-[11px] text-muted/75">
+                    Digunakan penjual dan AI untuk memvalidasi mutasi transfer rekening Anda.
+                  </span>
                 </div>
               </div>
 

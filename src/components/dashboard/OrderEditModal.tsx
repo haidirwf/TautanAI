@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { MessageCircle, Save, MapPin, Bot, ShieldCheck, ExternalLink, Image as ImageIcon } from 'lucide-react'
+import { MessageCircle, Save, MapPin, Bot, ShieldCheck, ExternalLink, Image as ImageIcon, CreditCard } from 'lucide-react'
 import type { Order, OrderStatus } from '@/types'
 import { formatIDR, sanitizeWhatsApp } from '@/lib/utils'
 import { api } from '@/lib/supabase'
@@ -19,6 +19,8 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
   const [status, setStatus] = useState<OrderStatus>('PENDING_WA')
   const [shippingFee, setShippingFee] = useState<number>(0)
   const [paymentMethod, setPaymentMethod] = useState<string>('')
+  const [paymentSenderName, setPaymentSenderName] = useState<string>('')
+  const [paymentSenderAccount, setPaymentSenderAccount] = useState<string>('')
   const [courierName, setCourierName] = useState<string>('')
   const [trackingNumber, setTrackingNumber] = useState<string>('')
   const [sellerNote, setSellerNote] = useState<string>('')
@@ -30,6 +32,8 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
       setStatus(order.status)
       setShippingFee(order.shipping_fee || 0)
       setPaymentMethod(order.payment_method || 'Transfer BCA')
+      setPaymentSenderName(order.payment_sender_name || '')
+      setPaymentSenderAccount(order.payment_sender_account || '')
       setCourierName(order.courier_name || '')
       setTrackingNumber(order.tracking_number || '')
       setSellerNote(order.seller_internal_note || '')
@@ -50,6 +54,8 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
         shipping_fee: shippingFee,
         total_amount: calculatedTotal,
         payment_method: paymentMethod,
+        payment_sender_name: paymentSenderName,
+        payment_sender_account: paymentSenderAccount,
         courier_name: courierName,
         tracking_number: trackingNumber,
         seller_internal_note: sellerNote,
@@ -248,13 +254,27 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
               onChange={(e) => setPaymentMethod(e.target.value)}
               className="w-full h-9 sm:h-10 px-2 sm:px-3 rounded-xl bg-white border border-[#e8e2d9] text-xs sm:text-sm text-[#141413] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
             >
-              <option value="Transfer BCA">Transfer BCA</option>
-              <option value="Transfer Mandiri">Transfer Mandiri</option>
-              <option value="Transfer BRI">Transfer BRI</option>
-              <option value="Transfer BNI">Transfer BNI</option>
-              <option value="QRIS Manual">QRIS Manual</option>
-              <option value="COD / Bayar di Tempat">COD / Bayar di Tempat</option>
-              <option value="Lainnya">Lainnya</option>
+              <optgroup label="Transfer Bank">
+                <option value="Transfer BCA">Transfer BCA</option>
+                <option value="Transfer Mandiri">Transfer Mandiri</option>
+                <option value="Transfer BRI">Transfer BRI</option>
+                <option value="Transfer BNI">Transfer BNI</option>
+                <option value="Transfer BSI">Transfer BSI</option>
+                <option value="Transfer Bank Jago / SeaBank">Bank Jago / SeaBank</option>
+                <option value="Transfer Bank Lainnya">Bank Lainnya</option>
+              </optgroup>
+              <optgroup label="E-Wallet">
+                <option value="DANA">DANA</option>
+                <option value="GoPay">GoPay</option>
+                <option value="OVO">OVO</option>
+                <option value="ShopeePay">ShopeePay</option>
+                <option value="E-Wallet Lainnya">E-Wallet Lainnya</option>
+              </optgroup>
+              <optgroup label="Lainnya">
+                <option value="QRIS Manual">QRIS Manual</option>
+                <option value="COD / Bayar di Tempat">COD / Bayar di Tempat</option>
+                <option value="Lainnya">Lainnya</option>
+              </optgroup>
             </select>
           </div>
 
@@ -283,6 +303,40 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
               onChange={(e) => setTrackingNumber(e.target.value)}
               className="w-full h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-xl bg-white border border-[#e8e2d9] text-xs sm:text-sm text-[#141413] placeholder:text-[#a09a8f] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] font-mono shadow-2xs"
             />
+          </div>
+        </div>
+
+        {/* Data Rekening / E-Wallet Pengirim (Pembeli) */}
+        <div className="p-3.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] flex flex-col gap-2.5">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#141413]">
+            <CreditCard className="size-3.5 text-[#cc785c]" />
+            <span>Data Rekening / E-Wallet Pengirim (Pembeli)</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label className="text-[11px] font-medium text-[#706c64] block mb-1">
+                Nama Pengirim / Pemilik Rekening
+              </label>
+              <input
+                type="text"
+                placeholder="Nama pemilik rekening pembeli"
+                value={paymentSenderName}
+                onChange={(e) => setPaymentSenderName(e.target.value)}
+                className="w-full h-9 sm:h-10 px-3 rounded-lg bg-white border border-[#e8e2d9] text-xs sm:text-sm text-[#141413] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-medium text-[#706c64] block mb-1">
+                Nomor Rekening / No. E-Wallet
+              </label>
+              <input
+                type="text"
+                placeholder="Nomor rekening atau nomor e-wallet"
+                value={paymentSenderAccount}
+                onChange={(e) => setPaymentSenderAccount(e.target.value)}
+                className="w-full h-9 sm:h-10 px-3 rounded-lg bg-white border border-[#e8e2d9] text-xs sm:text-sm font-mono text-[#141413] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
+              />
+            </div>
           </div>
         </div>
 

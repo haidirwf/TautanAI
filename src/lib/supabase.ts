@@ -543,24 +543,47 @@ export const api = {
 
       while (attempts < 3 && !insertSuccess) {
         attempts++
-        const { data, error } = await supabase
+        const insertPayload: Record<string, any> = {
+          store_id: newOrder.store_id,
+          order_code: activeOrderCode,
+          buyer_name: newOrder.buyer_name,
+          buyer_phone: newOrder.buyer_phone,
+          shipping_address: newOrder.shipping_address,
+          order_notes: newOrder.order_notes || '',
+          subtotal: newOrder.subtotal,
+          shipping_fee: newOrder.shipping_fee || 0,
+          total_amount: newOrder.total_amount,
+          payment_method: newOrder.payment_method || 'PENDING_WA',
+          payment_sender_name: newOrder.payment_sender_name || '',
+          payment_sender_account: newOrder.payment_sender_account || '',
+          status: 'PENDING_WA',
+          items_snapshot: newOrder.items_snapshot,
+        }
+
+        let { data, error } = await supabase
           .from('orders')
-          .insert([{
-            store_id: newOrder.store_id,
-            order_code: activeOrderCode,
-            buyer_name: newOrder.buyer_name,
-            buyer_phone: newOrder.buyer_phone,
-            shipping_address: newOrder.shipping_address,
-            order_notes: newOrder.order_notes || '',
-            subtotal: newOrder.subtotal,
-            shipping_fee: newOrder.shipping_fee || 0,
-            total_amount: newOrder.total_amount,
-            payment_method: newOrder.payment_method || 'PENDING_WA',
-            status: 'PENDING_WA',
-            items_snapshot: newOrder.items_snapshot,
-          }])
+          .insert([insertPayload])
           .select()
           .single()
+
+        // Fallback if payment_sender columns not yet migrated in Supabase DB schema
+        if (error && (error.code === '42703' || error.message?.includes('payment_sender'))) {
+          delete insertPayload.payment_sender_name
+          delete insertPayload.payment_sender_account
+          const senderInfo = [newOrder.payment_sender_name, newOrder.payment_sender_account].filter(Boolean).join(' - ')
+          if (senderInfo) {
+            insertPayload.order_notes = insertPayload.order_notes
+              ? `${insertPayload.order_notes} | [Rek. Pengirim: ${senderInfo}]`
+              : `[Rek. Pengirim: ${senderInfo}]`
+          }
+          const retryRes = await supabase
+            .from('orders')
+            .insert([insertPayload])
+            .select()
+            .single()
+          data = retryRes.data
+          error = retryRes.error
+        }
 
         if (!error && data) {
           insertSuccess = true
@@ -653,12 +676,25 @@ export const api = {
     }
 
     if (isSupabaseConfigured && supabase) {
-      const { data } = await supabase
+      let { data, error } = await supabase
         .from('orders')
         .update(patch)
         .eq('id', orderId)
         .select()
         .single()
+
+      if (error && (error.code === '42703' || error.message?.includes('payment_sender'))) {
+        const safePatch = { ...patch }
+        delete safePatch.payment_sender_name
+        delete safePatch.payment_sender_account
+        const retryRes = await supabase
+          .from('orders')
+          .update(safePatch)
+          .eq('id', orderId)
+          .select()
+          .single()
+        data = retryRes.data
+      }
       if (data) return data
     }
 
