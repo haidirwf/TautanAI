@@ -301,7 +301,7 @@ export function LandingPage() {
                   <div className="flex justify-start">
                     <div className="max-w-[88%] rounded-2xl rounded-tl-xs bg-white border border-[#e6dfd8] text-[#141413] p-2.5 text-xs shadow-2xs">
                       <p className="leading-snug">
-                        Halo Kak! Kopi Susu Aren dingin <span className="font-bold text-[#141413]">ready 12 cup</span>. Ke Renon siap dikirim via kurir instan sekarang ya kak.
+                        Halo Kak! Kopi Susu Aren dingin <span className="font-bold text-[#141413]">ready 2 cup</span>. Ke Renon siap langsung dikirim via kurir instan ya kak.
                       </p>
                       <div className="mt-1.5 pt-1.5 border-t border-[#f0ece5] flex items-center justify-between text-[10px] font-mono text-[#706c64]">
                         <span>Total 2 Cup: {formatIDR(44000)}</span>
