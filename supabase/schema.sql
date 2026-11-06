@@ -301,29 +301,37 @@ CREATE POLICY "Owners can manage variant options" ON variant_options
     WHERE variant_groups.id = variant_options.group_id AND stores.user_id = auth.uid()
   ));
 
--- 6. Orders Policies
+-- 6. Orders Policies (Strict RLS: Public can only insert PENDING_WA, only Store Owner can view/manage)
 DROP POLICY IF EXISTS "Public can insert orders" ON orders;
 CREATE POLICY "Public can insert orders" ON orders
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT WITH CHECK (status = 'PENDING_WA');
 
 DROP POLICY IF EXISTS "Public can view orders" ON orders;
-CREATE POLICY "Public can view orders" ON orders
-  FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "Owners can manage orders" ON orders;
-CREATE POLICY "Owners can manage orders" ON orders
-  FOR ALL 
+CREATE POLICY "Owners can view orders" ON orders
+  FOR SELECT 
+  USING (EXISTS (SELECT 1 FROM stores WHERE stores.id = orders.store_id AND stores.user_id = auth.uid()));
+
+CREATE POLICY "Owners can update orders" ON orders
+  FOR UPDATE 
   USING (EXISTS (SELECT 1 FROM stores WHERE stores.id = orders.store_id AND stores.user_id = auth.uid()))
   WITH CHECK (EXISTS (SELECT 1 FROM stores WHERE stores.id = orders.store_id AND stores.user_id = auth.uid()));
 
--- 7. Reviews Policies
+CREATE POLICY "Owners can delete orders" ON orders
+  FOR DELETE 
+  USING (EXISTS (SELECT 1 FROM stores WHERE stores.id = orders.store_id AND stores.user_id = auth.uid()));
+
+-- 7. Reviews Policies (Public can view; Insert requires valid rating and existing order)
 DROP POLICY IF EXISTS "Public can view reviews" ON reviews;
 CREATE POLICY "Public can view reviews" ON reviews
   FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Public can insert reviews" ON reviews;
 CREATE POLICY "Public can insert reviews" ON reviews
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT WITH CHECK (
+    rating >= 1 AND rating <= 5 
+    AND (order_id IS NULL OR EXISTS (SELECT 1 FROM orders WHERE orders.id = reviews.order_id))
+  );
 
 DROP POLICY IF EXISTS "Owners can manage reviews" ON reviews;
 CREATE POLICY "Owners can manage reviews" ON reviews
@@ -331,10 +339,19 @@ CREATE POLICY "Owners can manage reviews" ON reviews
   USING (EXISTS (SELECT 1 FROM stores WHERE stores.id = reviews.store_id AND stores.user_id = auth.uid()))
   WITH CHECK (EXISTS (SELECT 1 FROM stores WHERE stores.id = reviews.store_id AND stores.user_id = auth.uid()));
 
--- 8. AI Chat Sessions Policies
+-- 8. AI Chat Sessions Policies (Strict RLS: Only Store Owner or Service Role can read)
 DROP POLICY IF EXISTS "Public or service role can manage ai_chat_sessions" ON ai_chat_sessions;
-CREATE POLICY "Public or service role can manage ai_chat_sessions" ON ai_chat_sessions
-  FOR ALL USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Public can insert ai_chat_sessions" ON ai_chat_sessions;
+DROP POLICY IF EXISTS "Owners can view ai_chat_sessions" ON ai_chat_sessions;
+DROP POLICY IF EXISTS "Owners can manage ai_chat_sessions" ON ai_chat_sessions;
+
+CREATE POLICY "Public can insert ai_chat_sessions" ON ai_chat_sessions
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Owners can manage ai_chat_sessions" ON ai_chat_sessions
+  FOR ALL 
+  USING (EXISTS (SELECT 1 FROM stores WHERE stores.id = ai_chat_sessions.store_id AND stores.user_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM stores WHERE stores.id = ai_chat_sessions.store_id AND stores.user_id = auth.uid()));
 
 -- ==============================================================================
 -- Automatic Store Creation Trigger on User Sign Up (Supabase Auth)
@@ -420,8 +437,8 @@ CREATE POLICY "Authenticated users can upload product images" ON storage.objects
 
 DROP POLICY IF EXISTS "Authenticated users can update their product images" ON storage.objects;
 CREATE POLICY "Authenticated users can update their product images" ON storage.objects
-  FOR UPDATE USING (bucket_id = 'product-images' AND auth.role() = 'authenticated');
+  FOR UPDATE USING (bucket_id = 'product-images' AND auth.uid() = owner);
 
 DROP POLICY IF EXISTS "Authenticated users can delete their product images" ON storage.objects;
 CREATE POLICY "Authenticated users can delete their product images" ON storage.objects
-  FOR DELETE USING (bucket_id = 'product-images' AND auth.role() = 'authenticated');
+  FOR DELETE USING (bucket_id = 'product-images' AND auth.uid() = owner);

@@ -1,14 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL = 'https://brbwqytxkulokpbtnhsx.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJyYndxeXR4a3Vsb2twYnRuaHN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5NTM0OTksImV4cCI6MjEwNTUyOTQ5OX0.qx9AG9OLCneDmMgvCCRMETluQppbuscKomnqNcnXIw4'
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY environment variables.')
+  process.exit(1)
+}
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 async function seed() {
-  console.log('--- 1. Authenticating user@tautan.site ---')
-  const email = 'user@tautan.site'
-  const password = 'siswa123'
+  const email = process.env.SEED_EMAIL || 'user@tautan.site'
+  const password = process.env.SEED_PASSWORD || 'siswa123'
+  console.log(`--- 1. Authenticating ${email} ---`)
 
   let { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
     email,

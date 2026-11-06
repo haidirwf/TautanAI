@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { Plus, Search, Tag, Package, ExternalLink, X, Pencil, Trash2 } from 'lucide-react'
-import type { Product } from '@/types'
+import type { Product, Category } from '@/types'
 import { api } from '@/lib/supabase'
 import { formatIDR, cn } from '@/lib/utils'
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout'
@@ -22,6 +22,7 @@ export function CatalogPage() {
   const storeId = user?.storeId || ''
   const storeSlug = user?.storeSlug || ''
   const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('ALL')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
@@ -60,10 +61,14 @@ export function CatalogPage() {
       if (!storeId) return
       setIsLoading(true)
       try {
-        const data = await api.getProducts(storeId)
-        setProducts(data)
+        const [prodsData, catsData] = await Promise.all([
+          api.getProducts(storeId),
+          api.getCategories(storeId),
+        ])
+        setProducts(prodsData)
+        setCategories(catsData)
       } catch (err) {
-        console.error('Failed to load products:', err)
+        console.error('Failed to load products/categories:', err)
       } finally {
         setIsLoading(false)
       }
@@ -81,8 +86,20 @@ export function CatalogPage() {
 
     setIsSubmitting(true)
     try {
+      let catId: string | undefined = undefined
+      if (categoryName.trim()) {
+        const cat = await api.createCategory(storeId, categoryName.trim())
+        if (cat) {
+          catId = cat.id
+          if (!categories.some((c) => c.id === cat.id)) {
+            setCategories((prev) => [...prev, cat])
+          }
+        }
+      }
+
       const created = await api.createProduct({
         store_id: storeId,
+        category_id: catId,
         name: name.trim(),
         description: description.trim(),
         base_price: Number(price),
@@ -122,6 +139,8 @@ export function CatalogPage() {
     setEditName(prod.name)
     setEditPrice(String(prod.base_price))
     setEditDesc(prod.description || '')
+    const matchedCategory = categories.find((c) => c.id === prod.category_id)
+    setEditCategory(matchedCategory ? matchedCategory.name : 'Kemeja Pria')
     setEditImageUrl(prod.image_url || '')
     setEditIsActive(prod.is_active)
     setEditAiContext(prod.ai_context || '')
@@ -143,7 +162,19 @@ export function CatalogPage() {
 
     setIsSubmitting(true)
     try {
+      let catId: string | undefined = undefined
+      if (editCategory.trim()) {
+        const cat = await api.createCategory(storeId, editCategory.trim())
+        if (cat) {
+          catId = cat.id
+          if (!categories.some((c) => c.id === cat.id)) {
+            setCategories((prev) => [...prev, cat])
+          }
+        }
+      }
+
       const updated = await api.updateProduct(editingProduct.id, {
+        category_id: catId,
         name: editName.trim(),
         base_price: Number(editPrice),
         description: editDesc.trim(),

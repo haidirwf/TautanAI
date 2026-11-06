@@ -50,16 +50,8 @@ export async function processIncomingWhatsAppMessage(
   const { data: matchedStores } = await storeQuery.limit(1)
   let store: Store | null = matchedStores && matchedStores.length > 0 ? matchedStores[0] : null
 
-  // Fallback: If no exact match by device, get the first active store with AI enabled
-  if (!store) {
-    const { data: defaultStore } = await supabase.from('stores').select('*').eq('ai_enabled', true).limit(1)
-    if (defaultStore && defaultStore.length > 0) {
-      store = defaultStore[0]
-    }
-  }
-
   if (!store || !store.ai_enabled) {
-    return { reply: 'Terima kasih telah menghubungi kami. Pesan Anda telah kami terima dan akan segera dibalas oleh admin.' }
+    return { reply: '' }
   }
 
   let cleanPhone = senderPhone.replace(/@.*$/, '').replace(/[^0-9]/g, '')
@@ -275,8 +267,21 @@ ATURAN UTAMA ANDA:
         const orderCode = `ORD-${Date.now().toString(36).toUpperCase()}`
         const pId = fnArgs.product_id
         const prod = products.find(p => p.id === pId) || products[0]
-        const qty = Number(fnArgs.quantity) || 1
-        const unitPrice = prod ? prod.base_price : 100000
+        const qty = Math.max(1, Number(fnArgs.quantity) || 1)
+        let unitPrice = prod ? Number(prod.base_price) : 100000
+
+        // Calculate variant delta from product variant groups
+        const variantInfo = String(fnArgs.variant_info || '').toLowerCase()
+        if (prod && prod.variant_groups && variantInfo) {
+          for (const vg of prod.variant_groups) {
+            const options = vg.options || (vg as any).variant_options || []
+            for (const opt of options) {
+              if (variantInfo.includes(opt.name.toLowerCase())) {
+                unitPrice += Number(opt.price_delta || 0)
+              }
+            }
+          }
+        }
         const subtotal = unitPrice * qty
 
         const { data: newOrder, error: orderErr } = await supabase
@@ -319,50 +324,59 @@ ATURAN UTAMA ANDA:
           toolResult = { success: false, error: orderErr?.message }
         }
       } else if (fnName === 'confirm_buyer_payment') {
-        const orderCode = String(fnArgs.order_code || '').trim()
-        const { data: updatedOrder, error: updateErr } = await supabase
-          .from('orders')
-          .update({
-            status: 'PAID',
-            paid_at: new Date().toISOString(),
-            managed_by_ai: true,
-            payment_proof_url: mediaUrl || '',
-            seller_internal_note: `Lunas terverifikasi oleh AI WhatsApp: ${fnArgs.payment_notes || 'Bukti bayar terlampir'}`,
-          })
-          .eq('store_id', store.id)
-          .ilike('order_code', `%${orderCode.replace(/^#/, '')}%`)
-          .select()
-          .single()
+        const rawCode = String(fnArgs.order_code || '').trim().replace(/^#/, '')
 
-        if (!updateErr && updatedOrder) {
-          orderUpdated = true
-          targetOrderCode = updatedOrder.order_code
+        if (!rawCode || rawCode.length < 6) {
           toolResult = {
-            success: true,
-            order_code: updatedOrder.order_code,
-            new_status: 'PAID',
-            message: 'Status pesanan berhasil diubah menjadi Lunas (PAID). Siap dipacking oleh penjual.',
+            success: false,
+            message: 'Kode pesanan tidak valid atau terlalu pendek. Mohon berikan kode pesanan resmi (misal: ORD-...).',
           }
         } else {
-          const pendingOrder = (recentOrders || []).find((o: any) => o.status === 'PENDING_WA' || o.status === 'PENDING')
-          if (pendingOrder) {
-            await supabase.from('orders').update({
-              status: 'PAID',
-              paid_at: new Date().toISOString(),
-              managed_by_ai: true,
-              payment_proof_url: mediaUrl || '',
-              seller_internal_note: `Lunas terverifikasi oleh AI WhatsApp: ${fnArgs.payment_notes || 'Bukti bayar terlampir'}`,
-            }).eq('id', pendingOrder.id)
-            orderUpdated = true
-            targetOrderCode = pendingOrder.order_code
+          const { data: matchedOrder } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('store_id', store.id)
+            .or(`buyer_phone.eq.${cleanPhone},buyer_phone.eq.${altPhone}`)
+            .ilike('order_code', `%${rawCode}%`)
+            .maybeSingle()
+
+          if (matchedOrder && (matchedOrder.status === 'PENDING_WA' || matchedOrder.status === 'PENDING')) {
+            const { data: updatedOrder, error: updateErr } = await supabase
+              .from('orders')
+              .update({
+                status: 'PAID',
+                paid_at: new Date().toISOString(),
+                managed_by_ai: true,
+                payment_proof_url: mediaUrl || matchedOrder.payment_proof_url || '',
+                seller_internal_note: `Lunas terverifikasi oleh AI WhatsApp: ${fnArgs.payment_notes || 'Bukti bayar terlampir'}`,
+              })
+              .eq('id', matchedOrder.id)
+              .select()
+              .single()
+
+            if (!updateErr && updatedOrder) {
+              orderUpdated = true
+              targetOrderCode = updatedOrder.order_code
+              toolResult = {
+                success: true,
+                order_code: updatedOrder.order_code,
+                new_status: 'PAID',
+                message: 'Status pesanan berhasil diverifikasi lunas (PAID). Siap dipacking oleh penjual.',
+              }
+            } else {
+              toolResult = { success: false, error: updateErr?.message }
+            }
+          } else if (matchedOrder && matchedOrder.status === 'PAID') {
             toolResult = {
               success: true,
-              order_code: pendingOrder.order_code,
-              new_status: 'PAID',
-              message: 'Status pesanan berhasil diubah menjadi Lunas (PAID). Siap dipacking oleh penjual.',
+              order_code: matchedOrder.order_code,
+              message: 'Pesanan ini sudah berstatus Lunas (PAID) sebelumnya.',
             }
           } else {
-            toolResult = { success: false, message: 'Pesanan tidak ditemukan atau sudah diproses lunas sebelumnya.' }
+            toolResult = {
+              success: false,
+              message: 'Pesanan tidak ditemukan dalam daftar antrean pembayaran nomor Anda.',
+            }
           }
         }
       }

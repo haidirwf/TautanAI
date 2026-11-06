@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Store, StoreLink, Category, Product, VariantGroup, VariantOption, Order, OrderStatus, DashboardMetrics, Review } from '@/types'
+import { generateOrderCode } from '@/lib/utils'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -123,13 +124,14 @@ function saveStoredProducts(products: Product[]) {
 export const api = {
   async getStoreBySlug(slug: string): Promise<Store | null> {
     if (isSupabaseConfigured && supabase) {
+      // Exclude sensitive merchant credentials (fonnte_token, ai_instructions, etc.) from public storefront queries
       const { data, error } = await supabase
         .from('stores')
-        .select('*')
+        .select('id, user_id, slug, name, tagline, avatar_url, whatsapp_number, created_at, updated_at')
         .eq('slug', slug)
         .single()
       if (error) return null
-      return data
+      return data as Store
     }
     return null
   },
@@ -294,6 +296,30 @@ export const api = {
     return []
   },
 
+  async createStoreLink(storeId: string, title: string, url: string): Promise<StoreLink | null> {
+    if (isSupabaseConfigured && supabase && storeId) {
+      const { data, error } = await supabase
+        .from('store_links')
+        .insert([{
+          store_id: storeId,
+          title: title.trim(),
+          url: url.trim(),
+        }])
+        .select()
+        .single()
+      if (!error && data) return data
+    }
+    return null
+  },
+
+  async deleteStoreLink(linkId: string): Promise<boolean> {
+    if (isSupabaseConfigured && supabase && linkId) {
+      const { error } = await supabase.from('store_links').delete().eq('id', linkId)
+      return !error
+    }
+    return false
+  },
+
   async getCategories(storeId: string): Promise<Category[]> {
     if (isSupabaseConfigured && supabase && storeId) {
       const { data } = await supabase
@@ -304,6 +330,31 @@ export const api = {
       return data || []
     }
     return []
+  },
+
+  async createCategory(storeId: string, name: string): Promise<Category | null> {
+    if (isSupabaseConfigured && supabase && storeId && name) {
+      // Check if already exists
+      const { data: existing } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('store_id', storeId)
+        .ilike('name', name.trim())
+        .maybeSingle()
+      if (existing) return existing
+
+      const { data, error } = await supabase
+        .from('categories')
+        .insert([{
+          store_id: storeId,
+          name: name.trim(),
+          sort_order: 1,
+        }])
+        .select()
+        .single()
+      if (!error && data) return data
+    }
+    return null
   },
 
   async getProducts(storeId: string, onlyActive: boolean = false): Promise<Product[]> {
@@ -477,38 +528,92 @@ export const api = {
 
   async createOrder(orderInput: Omit<Order, 'id' | 'created_at'>): Promise<Order> {
     const generatedId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ord-${Date.now()}`
+    let activeOrderCode = orderInput.order_code || generateOrderCode()
     const newOrder: Order = {
       ...orderInput,
       id: generatedId,
+      order_code: activeOrderCode,
       created_at: new Date().toISOString(),
     }
 
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase
-        .from('orders')
-        .insert([{
-          store_id: newOrder.store_id,
-          order_code: newOrder.order_code,
-          buyer_name: newOrder.buyer_name,
-          buyer_phone: newOrder.buyer_phone,
-          shipping_address: newOrder.shipping_address,
-          order_notes: newOrder.order_notes || '',
-          subtotal: newOrder.subtotal,
-          shipping_fee: newOrder.shipping_fee || 0,
-          total_amount: newOrder.total_amount,
-          payment_method: newOrder.payment_method || 'PENDING_WA',
-          status: newOrder.status,
-          items_snapshot: newOrder.items_snapshot,
-        }])
-        .select()
-        .single()
-      if (!error && data) return data
-      if (error) {
-        console.warn('Supabase createOrder error, falling back to local storage:', error)
+      let attempts = 0
+      let insertSuccess = false
+      let insertedData: any = null
+
+      while (attempts < 3 && !insertSuccess) {
+        attempts++
+        const { data, error } = await supabase
+          .from('orders')
+          .insert([{
+            store_id: newOrder.store_id,
+            order_code: activeOrderCode,
+            buyer_name: newOrder.buyer_name,
+            buyer_phone: newOrder.buyer_phone,
+            shipping_address: newOrder.shipping_address,
+            order_notes: newOrder.order_notes || '',
+            subtotal: newOrder.subtotal,
+            shipping_fee: newOrder.shipping_fee || 0,
+            total_amount: newOrder.total_amount,
+            payment_method: newOrder.payment_method || 'PENDING_WA',
+            status: 'PENDING_WA',
+            items_snapshot: newOrder.items_snapshot,
+          }])
+          .select()
+          .single()
+
+        if (!error && data) {
+          insertSuccess = true
+          insertedData = data
+          break
+        }
+
+        // Retry with fresh order code if unique constraint collision occurred
+        if (error && (error.code === '23505' || error.message?.includes('order_code'))) {
+          activeOrderCode = generateOrderCode()
+          newOrder.order_code = activeOrderCode
+        } else {
+          console.warn('Supabase createOrder error, falling back to local storage:', error)
+          break
+        }
+      }
+
+      // Decrement product stock if managed
+      if (insertSuccess && newOrder.items_snapshot && Array.isArray(newOrder.items_snapshot)) {
+        for (const item of newOrder.items_snapshot) {
+          if (item.product_id) {
+            try {
+              const { data: prod } = await supabase
+                .from('products')
+                .select('stock')
+                .eq('id', item.product_id)
+                .single()
+
+              if (prod && prod.stock !== null && prod.stock !== undefined) {
+                const nextStock = Math.max(0, Number(prod.stock) - Number(item.quantity || 1))
+                await supabase.from('products').update({ stock: nextStock }).eq('id', item.product_id)
+              }
+            } catch (stockErr) {
+              console.warn('Error adjusting product stock on checkout:', stockErr)
+            }
+          }
+        }
+        return insertedData
       }
     }
 
-    // LocalStorage fallback
+    // LocalStorage fallback with local stock decrement
+    const products = getStoredProducts()
+    if (newOrder.items_snapshot && Array.isArray(newOrder.items_snapshot)) {
+      for (const item of newOrder.items_snapshot) {
+        const prod = products.find((p) => p.id === item.product_id)
+        if (prod && prod.stock !== null && prod.stock !== undefined) {
+          prod.stock = Math.max(0, prod.stock - Number(item.quantity || 1))
+        }
+      }
+      saveStoredProducts(products)
+    }
+
     const orders = getStoredOrders()
     const updated = [newOrder, ...orders]
     saveStoredOrders(updated)

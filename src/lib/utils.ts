@@ -32,8 +32,14 @@ export function generateOrderCode(): string {
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const day = String(now.getDate()).padStart(2, '0')
-  const randomHex = Math.floor(1000 + Math.random() * 9000).toString(10)
-  return `#ORD-${year}${month}${day}-${randomHex}`
+  const randomSuffix = typeof crypto !== 'undefined' && crypto.getRandomValues
+    ? Array.from(crypto.getRandomValues(new Uint8Array(4)))
+        .map((b) => b.toString(36).padStart(2, '0'))
+        .join('')
+        .slice(0, 6)
+        .toUpperCase()
+    : Math.random().toString(36).substring(2, 8).toUpperCase()
+  return `#ORD-${year}${month}${day}-${randomSuffix}`
 }
 
 export function buildWhatsAppOrderMessage(

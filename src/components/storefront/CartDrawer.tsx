@@ -109,6 +109,15 @@ export function CartDrawer({ store }: CartDrawerProps) {
     if (!validateForm()) return
 
     setIsSubmitting(true)
+
+    // Synchronously open blank tab before async work to prevent mobile/desktop browser popup blocker
+    let waWindow: Window | null = null
+    try {
+      waWindow = window.open('about:blank', '_blank')
+    } catch (e) {
+      console.warn('Popup window open failed:', e)
+    }
+
     try {
       const orderCode = generateOrderCode()
       const sanitizedPhone = sanitizeWhatsApp(customerInfo.phone)
@@ -154,9 +163,16 @@ export function CartDrawer({ store }: CartDrawerProps) {
       goToStep('success')
       clearCart()
 
-      // Open WhatsApp automatically in a new window/tab
-      window.open(generatedWaUrl, '_blank')
+      // Direct pre-opened tab to WhatsApp, or fallback to location redirect
+      if (waWindow && !waWindow.closed) {
+        waWindow.location.href = generatedWaUrl
+      } else {
+        window.open(generatedWaUrl, '_blank')
+      }
     } catch (err) {
+      if (waWindow && !waWindow.closed) {
+        waWindow.close()
+      }
       console.error('Failed to submit order', err)
       alert('Terjadi kesalahan saat memproses pesanan. Silakan coba lagi.')
     } finally {

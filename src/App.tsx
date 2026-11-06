@@ -1,21 +1,30 @@
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { Navbar } from '@/components/common/Navbar'
-import { LandingPage } from '@/pages/LandingPage'
-import { StorefrontPage } from '@/pages/StorefrontPage'
-import { DashboardPage } from '@/pages/DashboardPage'
-import { OrdersPage } from '@/pages/OrdersPage'
-import { CatalogPage } from '@/pages/CatalogPage'
-import { CustomersPage } from '@/pages/CustomersPage'
-import { ReportsPage } from '@/pages/ReportsPage'
-import { SettingsPage } from '@/pages/SettingsPage'
-import { ReviewsPage } from '@/pages/ReviewsPage'
-import { AuthPage } from '@/pages/AuthPage'
-import { OnboardingPage } from '@/pages/OnboardingPage'
 import { useAuthStore } from '@/store/useAuthStore'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { Toaster } from '@/components/ui/Toaster'
+
+const LandingPage = lazy(() => import('@/pages/LandingPage').then((m) => ({ default: m.LandingPage })))
+const StorefrontPage = lazy(() => import('@/pages/StorefrontPage').then((m) => ({ default: m.StorefrontPage })))
+const DashboardPage = lazy(() => import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })))
+const OrdersPage = lazy(() => import('@/pages/OrdersPage').then((m) => ({ default: m.OrdersPage })))
+const CatalogPage = lazy(() => import('@/pages/CatalogPage').then((m) => ({ default: m.CatalogPage })))
+const CustomersPage = lazy(() => import('@/pages/CustomersPage').then((m) => ({ default: m.CustomersPage })))
+const ReportsPage = lazy(() => import('@/pages/ReportsPage').then((m) => ({ default: m.ReportsPage })))
+const SettingsPage = lazy(() => import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })))
+const ReviewsPage = lazy(() => import('@/pages/ReviewsPage').then((m) => ({ default: m.ReviewsPage })))
+const AuthPage = lazy(() => import('@/pages/AuthPage').then((m) => ({ default: m.AuthPage })))
+const OnboardingPage = lazy(() => import('@/pages/OnboardingPage').then((m) => ({ default: m.OnboardingPage })))
+
+function PageLoading() {
+  return (
+    <div className="flex-1 min-h-[60vh] flex items-center justify-center">
+      <div className="size-6 border-2 border-[#cc785c] border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+}
 
 function AppContent() {
   const location = useLocation()
@@ -55,31 +64,33 @@ function AppContent() {
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             className="flex-1 flex flex-col"
           >
-            <Routes location={location}>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/login" element={<AuthPage />} />
-              <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
-              
-              {/* Dashboard Sub-routes */}
-              <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-              <Route path="/dashboard/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
-              <Route path="/dashboard/katalog" element={<ProtectedRoute><CatalogPage /></ProtectedRoute>} />
-              <Route path="/dashboard/pelanggan" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />
-              <Route path="/dashboard/ulasan" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
-              <Route path="/dashboard/laporan" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-              <Route path="/dashboard/pengaturan" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+            <Suspense fallback={<PageLoading />}>
+              <Routes location={location}>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/login" element={<AuthPage />} />
+                <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
+                
+                {/* Dashboard Sub-routes */}
+                <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+                <Route path="/dashboard/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
+                <Route path="/dashboard/katalog" element={<ProtectedRoute><CatalogPage /></ProtectedRoute>} />
+                <Route path="/dashboard/pelanggan" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />
+                <Route path="/dashboard/ulasan" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/laporan" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+                <Route path="/dashboard/pengaturan" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
-              {/* Backward compatibility aliases */}
-              <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
-              <Route path="/katalog" element={<ProtectedRoute><CatalogPage /></ProtectedRoute>} />
-              <Route path="/pelanggan" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />
-              <Route path="/ulasan" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
-              <Route path="/laporan" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-              <Route path="/pengaturan" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+                {/* Backward compatibility aliases */}
+                <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
+                <Route path="/katalog" element={<ProtectedRoute><CatalogPage /></ProtectedRoute>} />
+                <Route path="/pelanggan" element={<ProtectedRoute><CustomersPage /></ProtectedRoute>} />
+                <Route path="/ulasan" element={<ProtectedRoute><ReviewsPage /></ProtectedRoute>} />
+                <Route path="/laporan" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+                <Route path="/pengaturan" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
-              <Route path="/:slug" element={<StorefrontPage />} />
-            </Routes>
+                <Route path="/:slug" element={<StorefrontPage />} />
+              </Routes>
+            </Suspense>
           </motion.div>
         </AnimatePresence>
       </div>
