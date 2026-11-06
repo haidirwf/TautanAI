@@ -288,11 +288,7 @@ export function LandingPage() {
                 </div>
 
                 {/* Autonomous WhatsApp Dialogue Snapshot Mockup */}
-                <div className="space-y-2.5 py-2">
-                  <div className="text-[10px] uppercase font-mono tracking-wider text-[#8c867b] font-semibold text-center pb-1">
-                    Simulasi Chat WhatsApp Otonom
-                  </div>
-
+                <div className="space-y-2.5 py-1">
                   {/* Buyer Message 1 */}
                   <div className="flex justify-end">
                     <div className="max-w-[85%] rounded-2xl rounded-tr-xs bg-[#e7fedb] border border-[#cbebb5] text-[#141413] p-2.5 text-xs shadow-2xs">
