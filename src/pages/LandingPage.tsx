@@ -42,16 +42,7 @@ export function LandingPage() {
         .from('.hero-trust', { opacity: 0, y: 10, duration: 0.3 }, '-=0.25')
         .from('.hero-card-wrapper', { opacity: 0, y: 22, scale: 0.98, duration: 0.45 }, '-=0.35')
 
-      // 2. Responsive Perpetual Floating Animation on the Showcase Card
-      gsap.to('.hero-float-card', {
-        y: -8,
-        duration: 2.2,
-        repeat: -1,
-        yoyo: true,
-        ease: 'sine.inOut',
-      })
-
-      // 3. Bento Grid Section Reveal (Fast & Crisp: Left from Left, Right from Right)
+      // 2. Bento Grid Section Reveal (Fast & Crisp: Left from Left, Right from Right)
       gsap.from('.bento-header', {
         scrollTrigger: { trigger: '#features', start: 'top 90%' },
         opacity: 0,
