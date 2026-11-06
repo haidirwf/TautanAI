@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, MessageCircle, CheckCircle2, Star } from 'lucide-react'
+import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, MessageCircle, CheckCircle2, Star, Bot } from 'lucide-react'
 import type { Store, Order } from '@/types'
 import { formatIDR, sanitizeWhatsApp, generateOrderCode, buildWhatsAppOrderMessage } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -445,12 +445,13 @@ export function CartDrawer({ store }: CartDrawerProps) {
                         {formatIDR(subtotal)}
                       </span>
                     </div>
-                    <p className="text-[11px] text-muted">
-                      *Ongkos kirim akan dihitung & disepakati bersama penjual via WhatsApp.
-                    </p>
+                    <div className="flex items-center gap-1.5 text-[11px] text-[#706c64]">
+                      <Bot className="size-3.5 text-[#cc785c] shrink-0" />
+                      <span>Dilayani Asisten WhatsApp Toko 24/7 (0% potongan biaya)</span>
+                    </div>
                     <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
                       <Button onClick={() => goToStep('checkout')} className="w-full mt-1 group">
-                        <span>Lanjut ke Pembayaran</span>
+                        <span>Lanjut ke Pengiriman</span>
                         <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
                       </Button>
                     </motion.div>
@@ -550,13 +551,20 @@ export function CartDrawer({ store }: CartDrawerProps) {
                 </div>
               </div>
 
-              {/* Summary bar */}
+              {/* Summary bar & AI Reassurance */}
               <div className="pt-3 border-t border-hairline flex flex-col gap-3">
                 <div className="flex items-center justify-between text-xs text-muted">
                   <span>Total Belanja ({itemCount} produk):</span>
                   <span className="font-sans text-base font-bold text-ink">
                     {formatIDR(subtotal)}
                   </span>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-[#faf4ed] border border-[#cc785c]/25 flex items-center gap-2 text-left">
+                  <Bot className="size-4 text-[#cc785c] shrink-0" />
+                  <p className="text-[11px] text-[#8c4327] leading-tight">
+                    <span className="font-semibold">Respon Otomatis 24/7:</span> Pesanan & bukti transfer Anda langsung diproses oleh Asisten WhatsApp toko.
+                  </p>
                 </div>
 
                 <div className="flex gap-2">

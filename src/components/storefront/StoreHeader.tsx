@@ -1,5 +1,5 @@
 import React from 'react'
-import { Share2, Check, ExternalLink } from 'lucide-react'
+import { Share2, Check, ExternalLink, Bot } from 'lucide-react'
 import type { Store, StoreLink } from '@/types'
 
 interface StoreHeaderProps {
@@ -53,6 +53,12 @@ export function StoreHeader({ store, links }: StoreHeaderProps) {
           {store.tagline}
         </p>
       )}
+
+      {/* Autonomous WhatsApp Support Badge (Non-Dot-Pill, Non-Sparkle) */}
+      <div className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#faf4ed] text-[#8c4327] border border-[#cc785c]/25 text-[11px] font-semibold">
+        <Bot className="size-3 text-[#cc785c]" />
+        <span>Asisten WhatsApp 24/7 Aktif</span>
+      </div>
 
       {/* Link-in-Bio Buttons */}
       {links && links.length > 0 && (
