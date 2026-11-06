@@ -670,7 +670,9 @@ export function LandingPage() {
       <footer className="border-t border-[#e6dfd8] bg-white py-8 px-4 sm:px-6 text-[#5c5850] text-xs">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <span className="font-sans text-base font-extrabold text-[#141413]">tautan.site</span>
+            <span className="font-sans text-base font-extrabold text-[#141413]">
+              tautan<span className="text-[#cc785c]">AI</span>
+            </span>
             <span className="text-neutral-300">|</span>
             <span className="text-xs text-[#706c64]">Autonomous AI WhatsApp Commerce & Link-in-Bio</span>
           </div>

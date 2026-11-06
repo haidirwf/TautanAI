@@ -27,7 +27,7 @@ export function Navbar() {
               whileTap={{ scale: 0.98 }}
               className="font-sans text-xl font-extrabold tracking-tight text-[#141413] flex items-center"
             >
-              tautan<span className="text-neutral-400 text-sm font-semibold ml-0.5">.site</span>
+              tautan<span className="text-[#cc785c] font-bold ml-0.5">AI</span>
             </motion.span>
           </Link>
 

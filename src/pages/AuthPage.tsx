@@ -77,7 +77,7 @@ export function AuthPage() {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2">
             <span className="font-sans text-2xl font-bold tracking-tight text-ink">
-              tautan<span className="text-primary font-sans text-xl">.site</span>
+              tautan<span className="text-primary font-sans text-xl font-bold ml-0.5">AI</span>
             </span>
           </Link>
         </div>

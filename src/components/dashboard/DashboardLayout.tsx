@@ -115,7 +115,7 @@ export function DashboardLayout({ children, onAddProductClick, isLoading = false
               T
             </div>
             <span className="font-sans text-lg font-bold tracking-tight text-ink">
-              tautan<span className="text-[#cc785c] font-sans text-xs">.site</span>
+              tautan<span className="text-[#cc785c] font-sans text-xs font-bold ml-0.5">AI</span>
             </span>
           </div>
         </div>
@@ -148,7 +148,7 @@ export function DashboardLayout({ children, onAddProductClick, isLoading = false
             </div>
             <div className="flex flex-col">
               <span className="font-sans text-xl font-bold tracking-tight leading-none text-[#141413]">
-                tautan<span className="text-[#cc785c] font-sans text-sm">.site</span>
+                tautan<span className="text-[#cc785c] font-sans text-sm font-bold ml-0.5">AI</span>
               </span>
             </div>
           </div>

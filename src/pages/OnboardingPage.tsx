@@ -152,7 +152,7 @@ export function OnboardingPage() {
       {/* Top Header */}
       <div className="max-w-xl w-full mx-auto flex items-center justify-between pb-6">
         <span className="font-sans text-xl font-bold tracking-tight text-ink">
-          tautan<span className="text-primary text-lg">.site</span>
+          tautan<span className="text-primary text-lg font-bold ml-0.5">AI</span>
         </span>
         <button
           type="button"
