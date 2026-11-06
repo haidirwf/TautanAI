@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { LayoutDashboard, ListOrdered, LogOut, ArrowRight, Menu, X } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -7,10 +7,16 @@ import { AuthModal } from '@/components/auth/AuthModal'
 
 export function Navbar() {
   const location = useLocation()
+  const navigate = useNavigate()
   const path = location.pathname
   const { user, isAuthenticated, logout } = useAuthStore()
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login', { replace: true })
+  }
 
   const isMerchantArea = path.startsWith('/dashboard') || path.startsWith('/orders')
   const isLandingPage = path === '/'
@@ -102,7 +108,7 @@ export function Navbar() {
                   <motion.button
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
-                    onClick={logout}
+                    onClick={handleLogout}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#efe9de] border border-[#e8e2d9] text-xs font-medium text-[#706c64] hover:text-status-error transition-colors"
                     title="Keluar dari akun penjual"
                   >

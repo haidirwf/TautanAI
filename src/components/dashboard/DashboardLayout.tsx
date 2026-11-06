@@ -79,9 +79,9 @@ export function DashboardLayout({ children, onAddProductClick, isLoading = false
     { label: 'Pengaturan', href: '/dashboard/settings', icon: Settings, active: path === '/dashboard/settings' || path === '/dashboard/pengaturan' },
   ]
 
-  const handleLogout = () => {
-    logout()
-    navigate('/')
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login', { replace: true })
   }
 
   const handleOpenAddProduct = () => {

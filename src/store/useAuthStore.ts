@@ -347,6 +347,14 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
+        // Immediately reset local state so UI components instantly reflect logged-out status
+        set({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          isInitialized: true,
+        })
+        clearAllDumpData()
         if (isSupabaseConfigured && supabase) {
           try {
             await supabase.auth.signOut()
@@ -354,13 +362,6 @@ export const useAuthStore = create<AuthState>()(
             console.warn('Supabase sign out warning', e)
           }
         }
-        clearAllDumpData()
-        set({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-          isInitialized: true,
-        })
       },
     }),
     {
