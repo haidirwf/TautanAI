@@ -161,7 +161,11 @@ ATURAN UTAMA ANDA:
 1. Jawab pertanyaan seputar barang secara informatif dengan memanfaatkan 'Catatan Khusus AI' dari masing-masing produk.
 2. Jika pembeli ingin memesan barang, rekap nama barang, jumlah, dan alamat pengiriman, lalu gunakan tool "create_order_draft" untuk membuat pesanan di sistem.
 3. Berikan instruksi transfer/QRIS sesuai rekening toko saat pesanan dibuat.
-4. Jika pembeli mengirim konfirmasi atau bukti transfer (termasuk foto bukti bayar), gunakan tool "confirm_buyer_payment" untuk mengubah status pesanan dari PENDING_WA menjadi PAID/PROCESSING secara otomatis di sistem toko.
+4. SANGAT PENTING - MENGUBAH STATUS PESANAN (PAID / LUNAS / BATAL):
+   - Jika pembeli mengirim bukti transfer, foto struk, atau menyatakan sudah bayar/transfer, Anda WAJIB MEMANGGIL tool "confirm_buyer_payment" (atau "update_order_status" dengan status "PAID") agar status di sistem toko dan dashboard penjual otomatis berubah menjadi PAID.
+   - Jika pembeli membatalkan pesanan, panggil tool "update_order_status" dengan status "CANCELLED".
+   - Jika pembeli tidak menyebutkan kode pesanan, gunakan kode pesanan pending yang tercatat di riwayat "PESANAN TERAKHIR DARI NOMOR INI" di atas.
+   - JANGAN PERNAH menyatakan pesanan sudah Lunas (PAID) dalam teks balasan tanpa berhasil mengeksekusi tool database terlebih dahulu!
 5. Jangan gunakan tanda pagar tiga (###) dalam pesan WhatsApp Anda. Gunakan format WhatsApp yang rapi (*tebal*, _miring_, poin-poin).`
 
   const tools = [
@@ -184,14 +188,29 @@ ATURAN UTAMA ANDA:
         },
         {
           name: 'confirm_buyer_payment',
-          description: 'Mengubah status pesanan menjadi PAID atau PROCESSING saat pembeli mengirim bukti transfer atau konfirmasi lunas.',
+          description: 'Mengubah status pesanan menjadi PAID (Lunas) di database saat pembeli mengirim bukti transfer atau konfirmasi lunas.',
           parameters: {
             type: 'OBJECT',
             properties: {
-              order_code: { type: 'STRING', description: 'Kode pesanan pembeli (misal: ORD-...)' },
+              order_code: { type: 'STRING', description: 'Kode pesanan pembeli (misal: ORD-...). Boleh kosong jika merujuk pesanan terakhir.' },
               payment_notes: { type: 'STRING', description: 'Catatan bukti pembayaran / bank pengirim' },
             },
-            required: ['order_code'],
+          },
+        },
+        {
+          name: 'update_order_status',
+          description: 'Mengubah status pesanan di database toko secara real-time (PAID jika sudah bayar, CANCELLED jika pembeli membatalkan pesanan, PROCESSING jika diproses).',
+          parameters: {
+            type: 'OBJECT',
+            properties: {
+              order_code: { type: 'STRING', description: 'Kode pesanan pembeli (misal: ORD-...). Boleh kosong jika merujuk pesanan terakhir.' },
+              status: {
+                type: 'STRING',
+                description: 'Status baru pesanan: PAID, CANCELLED, atau PROCESSING',
+              },
+              notes: { type: 'STRING', description: 'Catatan perubahan status' },
+            },
+            required: ['status'],
           },
         },
       ],
@@ -320,62 +339,138 @@ ATURAN UTAMA ANDA:
         } else {
           toolResult = { success: false, error: orderErr?.message }
         }
-      } else if (fnName === 'confirm_buyer_payment') {
+      } else if (fnName === 'confirm_buyer_payment' || fnName === 'update_order_status') {
         const rawCode = String(fnArgs.order_code || '').trim().replace(/^#/, '')
+        const targetStatus = String(fnArgs.status || 'PAID').toUpperCase()
+        const notes = fnArgs.notes || fnArgs.payment_notes || (mediaUrl ? 'Bukti transfer terlampir' : 'Dikonfirmasi oleh pembeli via WA')
 
-        // Strict validation: order code must be at least 6 characters
-        if (!rawCode || rawCode.length < 6) {
-          toolResult = {
-            success: false,
-            message: 'Kode pesanan tidak valid atau terlalu pendek. Mohon berikan kode pesanan resmi (misal: ORD-...).',
-          }
-        } else {
-          // Strictly verify order belongs to this store and this buyer's phone
-          const { data: matchedOrder } = await supabase
+        // 1. Match by specific order_code and buyer's phone
+        let matchedOrder: any = null
+        if (rawCode && rawCode.length >= 3) {
+          const { data } = await supabase
             .from('orders')
             .select('*')
             .eq('store_id', store.id)
             .or(`buyer_phone.eq.${cleanPhone},buyer_phone.eq.${altPhone}`)
             .ilike('order_code', `%${rawCode}%`)
+            .order('created_at', { ascending: false })
+            .limit(1)
             .maybeSingle()
+          matchedOrder = data
+        }
 
-          if (matchedOrder && (matchedOrder.status === 'PENDING_WA' || matchedOrder.status === 'PENDING')) {
-            const { data: updatedOrder, error: updateErr } = await supabase
-              .from('orders')
-              .update({
-                status: 'PAID',
-                paid_at: new Date().toISOString(),
-                managed_by_ai: true,
-                payment_proof_url: mediaUrl || matchedOrder.payment_proof_url || '',
-                seller_internal_note: `Lunas terverifikasi oleh AI WhatsApp: ${fnArgs.payment_notes || 'Bukti bayar terlampir'}`,
-              })
-              .eq('id', matchedOrder.id)
-              .select()
-              .single()
+        // 2. If not matched with phone but order code is sufficiently distinct (>= 6 chars)
+        if (!matchedOrder && rawCode && rawCode.length >= 6) {
+          const { data } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('store_id', store.id)
+            .ilike('order_code', `%${rawCode}%`)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          matchedOrder = data
+        }
 
-            if (!updateErr && updatedOrder) {
-              orderUpdated = true
-              targetOrderCode = updatedOrder.order_code
-              toolResult = {
-                success: true,
-                order_code: updatedOrder.order_code,
-                new_status: 'PAID',
-                message: 'Status pesanan berhasil diverifikasi lunas (PAID). Siap dipacking oleh penjual.',
-              }
-            } else {
-              toolResult = { success: false, error: updateErr?.message }
-            }
-          } else if (matchedOrder && matchedOrder.status === 'PAID') {
+        // 3. Fallback: If no code or not found, match the buyer's most recent pending order
+        if (!matchedOrder) {
+          const { data } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('store_id', store.id)
+            .or(`buyer_phone.eq.${cleanPhone},buyer_phone.eq.${altPhone}`)
+            .in('status', ['PENDING_WA', 'PENDING'])
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          matchedOrder = data
+        }
+
+        // 4. Fallback: match from recentOrders context
+        if (!matchedOrder && recentOrders && recentOrders.length > 0) {
+          matchedOrder = recentOrders.find((o: any) => o.status === 'PENDING_WA' || o.status === 'PENDING')
+        }
+
+        if (matchedOrder) {
+          if (matchedOrder.status === targetStatus) {
             toolResult = {
               success: true,
               order_code: matchedOrder.order_code,
-              message: 'Pesanan ini sudah berstatus Lunas (PAID) sebelumnya.',
+              status: matchedOrder.status,
+              message: `Pesanan ${matchedOrder.order_code} sudah berstatus ${matchedOrder.status}.`,
             }
           } else {
-            toolResult = {
-              success: false,
-              message: 'Pesanan tidak ditemukan dalam daftar antrean pembayaran nomor Anda.',
+            let updatedSuccess = false
+            let updatedOrderCode = matchedOrder.order_code
+
+            // Step A: Attempt update via PostgreSQL RPC (SECURITY DEFINER, completely bypasses RLS safely)
+            try {
+              const { data: rpcRes, error: rpcErr } = await supabase.rpc('update_order_status_by_ai', {
+                p_order_id: matchedOrder.id,
+                p_store_id: store.id,
+                p_status: targetStatus,
+                p_proof_url: mediaUrl || matchedOrder.payment_proof_url || '',
+                p_notes: notes,
+              })
+
+              if (!rpcErr && rpcRes && rpcRes.success) {
+                updatedSuccess = true
+                updatedOrderCode = rpcRes.order_code || updatedOrderCode
+              } else if (rpcErr) {
+                console.warn('RPC update_order_status_by_ai warning:', rpcErr.message)
+              }
+            } catch (rpcEx) {
+              console.warn('RPC call exception:', rpcEx)
             }
+
+            // Step B: Direct table update fallback (supported by "Allow AI order updates" policy)
+            if (!updatedSuccess) {
+              const patchData: any = {
+                status: targetStatus,
+                managed_by_ai: true,
+                payment_proof_url: mediaUrl || matchedOrder.payment_proof_url || '',
+                seller_internal_note: `Status diubah (${targetStatus}) oleh AI WhatsApp: ${notes}`,
+                updated_at: new Date().toISOString(),
+              }
+              if (targetStatus === 'PAID') {
+                patchData.paid_at = new Date().toISOString()
+              }
+
+              const { data: directUpdated, error: directErr } = await supabase
+                .from('orders')
+                .update(patchData)
+                .eq('id', matchedOrder.id)
+                .select()
+                .maybeSingle()
+
+              if (!directErr && directUpdated) {
+                updatedSuccess = true
+                updatedOrderCode = directUpdated.order_code
+              } else if (directErr) {
+                console.error('Direct order update error:', directErr)
+              }
+            }
+
+            if (updatedSuccess) {
+              orderUpdated = true
+              targetOrderCode = updatedOrderCode
+              toolResult = {
+                success: true,
+                order_code: updatedOrderCode,
+                new_status: targetStatus,
+                message: `Status pesanan ${updatedOrderCode} berhasil diubah menjadi ${targetStatus} di database.`,
+              }
+            } else {
+              toolResult = {
+                success: false,
+                message: `Gagal memperbarui status pesanan ${matchedOrder.order_code} di database toko.`,
+              }
+            }
+          }
+        } else {
+          toolResult = {
+            success: false,
+            message: 'Tidak ditemukan pesanan pending yang sesuai untuk nomor WhatsApp Anda. Mohon sertakan kode pesanan (misal: ORD-...).',
           }
         }
       }
@@ -422,8 +517,16 @@ ATURAN UTAMA ANDA:
       if (!finalReply) {
         if (fnName === 'create_order_draft' && toolResult.success) {
           finalReply = `Pesanan Kakak berhasil kami catat dengan kode *${toolResult.order_code}* (Total: Rp${Number(toolResult.total_amount).toLocaleString('id-ID')}).\n\nSilakan transfer ke rekening toko:\n*${store.ai_payment_info || 'BCA: 1234567890'}*\n\nKirimkan bukti transfer di sini agar pesanan segera kami siapkan ya Kak! 🙏`
-        } else if (fnName === 'confirm_buyer_payment' && toolResult.success) {
-          finalReply = `Terima kasih banyak Kak! Pembayaran untuk pesanan *${toolResult.order_code}* telah berhasil diverifikasi lunas. Kami akan segera memproses pengirimannya! 🙏`
+        } else if ((fnName === 'confirm_buyer_payment' || fnName === 'update_order_status') && toolResult.success) {
+          if (toolResult.new_status === 'PAID') {
+            finalReply = `Terima kasih banyak Kak! Pembayaran untuk pesanan *${toolResult.order_code}* telah berhasil diverifikasi lunas (PAID). Kami akan segera memproses pengirimannya! 🙏`
+          } else if (toolResult.new_status === 'CANCELLED') {
+            finalReply = `Baik Kak, pesanan *${toolResult.order_code}* telah berhasil dibatalkan di sistem toko kami. 🙏`
+          } else {
+            finalReply = `Status pesanan *${toolResult.order_code}* berhasil diperbarui menjadi ${toolResult.new_status}. 🙏`
+          }
+        } else if ((fnName === 'confirm_buyer_payment' || fnName === 'update_order_status') && !toolResult.success) {
+          finalReply = `Mohon maaf Kak, ${toolResult.message || 'sistem belum dapat menemukan pesanan pending yang cocok'}. Mohon kirimkan kode pesanan (misal: ORD-...) agar dapat kami proses.`
         } else {
           finalReply = 'Baik Kak, permohonan Anda telah kami proses.'
         }

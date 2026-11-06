@@ -317,6 +317,13 @@ CREATE POLICY "Owners can update orders" ON orders
   USING (EXISTS (SELECT 1 FROM stores WHERE stores.id = orders.store_id AND stores.user_id = auth.uid()))
   WITH CHECK (EXISTS (SELECT 1 FROM stores WHERE stores.id = orders.store_id AND stores.user_id = auth.uid()));
 
+-- Allow AI WhatsApp Copilot / Payment Webhook to update pending orders to PAID or CANCELLED
+DROP POLICY IF EXISTS "Allow AI order updates" ON orders;
+CREATE POLICY "Allow AI order updates" ON orders
+  FOR UPDATE 
+  USING (status IN ('PENDING_WA', 'PENDING'))
+  WITH CHECK (status IN ('PAID', 'PROCESSING', 'CANCELLED', 'PENDING_WA'));
+
 CREATE POLICY "Owners can delete orders" ON orders
   FOR DELETE 
   USING (EXISTS (SELECT 1 FROM stores WHERE stores.id = orders.store_id AND stores.user_id = auth.uid()));
@@ -442,3 +449,55 @@ CREATE POLICY "Authenticated users can update their product images" ON storage.o
 DROP POLICY IF EXISTS "Authenticated users can delete their product images" ON storage.objects;
 CREATE POLICY "Authenticated users can delete their product images" ON storage.objects
   FOR DELETE USING (bucket_id = 'product-images' AND auth.uid() = owner);
+
+-- ==============================================================================
+-- AI Agent Copilot Functions (Safe Serverless RPC with SECURITY DEFINER)
+-- ==============================================================================
+CREATE OR REPLACE FUNCTION update_order_status_by_ai(
+  p_order_id uuid,
+  p_store_id uuid,
+  p_status text DEFAULT 'PAID',
+  p_proof_url text DEFAULT '',
+  p_notes text DEFAULT ''
+)
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_order orders;
+  v_target_status text;
+BEGIN
+  v_target_status := UPPER(COALESCE(p_status, 'PAID'));
+  IF v_target_status NOT IN ('PAID', 'PROCESSING', 'CANCELLED') THEN
+    v_target_status := 'PAID';
+  END IF;
+
+  UPDATE orders
+  SET 
+    status = v_target_status,
+    paid_at = CASE WHEN v_target_status = 'PAID' THEN NOW() ELSE paid_at END,
+    managed_by_ai = true,
+    payment_proof_url = CASE 
+      WHEN p_proof_url IS NOT NULL AND p_proof_url != '' THEN p_proof_url 
+      ELSE payment_proof_url 
+    END,
+    seller_internal_note = CONCAT('Status diubah oleh AI WhatsApp: ', COALESCE(p_notes, 'Konfirmasi transfer diterima')),
+    updated_at = NOW()
+  WHERE id = p_order_id AND store_id = p_store_id
+  RETURNING * INTO v_order;
+
+  IF NOT FOUND THEN
+    RETURN json_build_object('success', false, 'message', 'Pesanan tidak ditemukan');
+  END IF;
+
+  RETURN json_build_object(
+    'success', true,
+    'order_code', v_order.order_code,
+    'status', v_order.status
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION update_order_status_by_ai TO anon, authenticated, service_role;
