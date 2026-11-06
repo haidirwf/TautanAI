@@ -169,6 +169,54 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
           </div>
         </div>
 
+        {/* Data Rekening / E-Wallet Pengirim (Pembeli) */}
+        <div className="p-3.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] flex flex-col gap-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#141413]">
+              <CreditCard className="size-3.5 text-[#cc785c]" />
+              <span>Data Rekening / E-Wallet Pengirim (Pembeli)</span>
+            </div>
+            {order.payment_proof_url && (
+              <a
+                href={order.payment_proof_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1 rounded-md bg-white border border-[#e8e2d9] text-[11px] font-semibold text-[#cc785c] hover:text-[#a9583e] flex items-center gap-1 shrink-0 transition-colors shadow-2xs cursor-pointer"
+              >
+                <ImageIcon className="size-3.5 text-[#cc785c]" />
+                <span>Bukti Transfer</span>
+                <ExternalLink className="size-3" />
+              </a>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label className="text-[11px] font-medium text-[#706c64] block mb-1">
+                Nama Pengirim / Pemilik Rekening
+              </label>
+              <input
+                type="text"
+                placeholder="Nama pemilik rekening pembeli"
+                value={paymentSenderName}
+                onChange={(e) => setPaymentSenderName(e.target.value)}
+                className="w-full h-9 sm:h-10 px-3 rounded-lg bg-white border border-[#e8e2d9] text-xs sm:text-sm text-[#141413] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-medium text-[#706c64] block mb-1">
+                Nomor Rekening / No. E-Wallet
+              </label>
+              <input
+                type="text"
+                placeholder="Nomor rekening atau nomor e-wallet"
+                value={paymentSenderAccount}
+                onChange={(e) => setPaymentSenderAccount(e.target.value)}
+                className="w-full h-9 sm:h-10 px-3 rounded-lg bg-white border border-[#e8e2d9] text-xs sm:text-sm font-mono text-[#141413] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Order Lifecycle Status Picker */}
         <div className="flex flex-col gap-2">
           <label className="text-xs font-medium text-[#141413] block">
@@ -277,54 +325,6 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
               onChange={(e) => setTrackingNumber(e.target.value)}
               className="w-full h-9 sm:h-10 px-2.5 sm:px-3.5 rounded-xl bg-white border border-[#e8e2d9] text-xs sm:text-sm text-[#141413] placeholder:text-[#a09a8f] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] font-mono shadow-2xs"
             />
-          </div>
-        </div>
-
-        {/* Data Rekening / E-Wallet Pengirim (Pembeli) */}
-        <div className="p-3.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] flex flex-col gap-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-[#141413]">
-              <CreditCard className="size-3.5 text-[#cc785c]" />
-              <span>Data Rekening / E-Wallet Pengirim (Pembeli)</span>
-            </div>
-            {order.payment_proof_url && (
-              <a
-                href={order.payment_proof_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-2.5 py-1 rounded-md bg-white border border-[#e8e2d9] text-[11px] font-semibold text-[#cc785c] hover:text-[#a9583e] flex items-center gap-1 shrink-0 transition-colors shadow-2xs cursor-pointer"
-              >
-                <ImageIcon className="size-3.5 text-[#cc785c]" />
-                <span>Bukti Transfer</span>
-                <ExternalLink className="size-3" />
-              </a>
-            )}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div>
-              <label className="text-[11px] font-medium text-[#706c64] block mb-1">
-                Nama Pengirim / Pemilik Rekening
-              </label>
-              <input
-                type="text"
-                placeholder="Nama pemilik rekening pembeli"
-                value={paymentSenderName}
-                onChange={(e) => setPaymentSenderName(e.target.value)}
-                className="w-full h-9 sm:h-10 px-3 rounded-lg bg-white border border-[#e8e2d9] text-xs sm:text-sm text-[#141413] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] font-medium text-[#706c64] block mb-1">
-                Nomor Rekening / No. E-Wallet
-              </label>
-              <input
-                type="text"
-                placeholder="Nomor rekening atau nomor e-wallet"
-                value={paymentSenderAccount}
-                onChange={(e) => setPaymentSenderAccount(e.target.value)}
-                className="w-full h-9 sm:h-10 px-3 rounded-lg bg-white border border-[#e8e2d9] text-xs sm:text-sm font-mono text-[#141413] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
-              />
-            </div>
           </div>
         </div>
 

@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 
 // Vite plugin to serve the WhatsApp webhook locally during development
-function localWhatsAppWebhookPlugin() {
+function localWhatsAppWebhookPlugin(envConfig: Record<string, string> = {}) {
   return {
     name: 'local-whatsapp-webhook-plugin',
     configureServer(server: any) {
@@ -134,8 +134,8 @@ function localWhatsAppWebhookPlugin() {
 
               const { orderId, orderCode, newStatus, courierName, trackingNumber, sellerNote } = parsed
               const { createClient } = await import('@supabase/supabase-js')
-              const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
-              const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
+              const url = envConfig.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
+              const key = envConfig.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || envConfig.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ''
 
               if (!url || !key) {
                 res.setHeader('Content-Type', 'application/json')
@@ -144,7 +144,10 @@ function localWhatsAppWebhookPlugin() {
                 return
               }
 
-              const supabase = createClient(url, key)
+              const supabase = createClient(url, key, {
+                auth: { persistSession: false },
+                realtime: { transport: class DummyWS {} as any },
+              })
               let order: any = null
               if (orderId) {
                 const { data } = await supabase.from('orders').select('*').eq('id', orderId).maybeSingle()
@@ -163,7 +166,7 @@ function localWhatsAppWebhookPlugin() {
               }
 
               const { data: store } = await supabase.from('stores').select('*').eq('id', order.store_id).maybeSingle()
-              const fonnteToken = store?.fonnte_token || process.env.FONNTE_TOKEN || ''
+              const fonnteToken = store?.fonnte_token || envConfig.FONNTE_TOKEN || process.env.FONNTE_TOKEN || ''
 
               if (!fonnteToken) {
                 res.setHeader('Content-Type', 'application/json')
