@@ -268,25 +268,30 @@ function localWhatsAppWebhookPlugin() {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), localWhatsAppWebhookPlugin()],
-  server: {
-    port: 3000,
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  Object.assign(process.env, env)
+
+  return {
+    plugins: [react(), localWhatsAppWebhookPlugin(env)],
+    server: {
+      port: 3000,
     },
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom', 'zustand'],
-          supabase: ['@supabase/supabase-js'],
-          icons: ['lucide-react'],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['react', 'react-dom', 'react-router-dom', 'zustand'],
+            supabase: ['@supabase/supabase-js'],
+            icons: ['lucide-react'],
+          },
         },
       },
     },
-  },
+  }
 })
