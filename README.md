@@ -40,9 +40,10 @@
 ## Key Features
 
 - **Instant Storefront & Onboarding (`/:slug`):** Launch a personalized, high-conversion storefront in seconds with custom brand avatar, bio, and social links.
-- **Autonomous WhatsApp AI Sales Agent:** 24/7 AI Copilot powered by Google Gemini handles buyer chat conversations, checks catalog inventory, recommends products, creates order drafts, and verifies payment receipts directly inside WhatsApp.
+- **Autonomous WhatsApp AI Sales Agent:** 24/7 AI Copilot powered by Google Gemini (`gemini-3.1-flash-lite`, `gemini-3.8-flash`, `gemini-flash-latest`) handles buyer chat conversations, checks catalog inventory, recommends products, creates order drafts, and verifies payment receipts directly inside WhatsApp.
 - **Direct WhatsApp Checkout (0% Fees):** No third-party payment gateway cuts. The frictionless shopping cart formats orders into clean, ready-to-send WhatsApp messages directly to the seller's active WhatsApp number.
-- **Automated Payment & Proof Verification:** Buyers can upload or send transfer receipt screenshots via WhatsApp. The AI autonomously matches the payment, tags seller notes, and flips the order status from `PENDING_WA` to `PAID` instantly.
+- **Automated Multimodal Vision OCR & Payment Verification:** Buyers can upload transfer receipt screenshots via WhatsApp. The AI uses Gemini Multimodal Vision to extract the sender's bank/e-wallet, account number, name, and amount, tags seller notes, and flips the order status from `PENDING_WA` to `PAID` instantly.
+- **Automated WhatsApp CS Rating & Review Engine:** Once an order is verified as PAID, the AI autonomously requests customer feedback (1–5 stars) in WhatsApp and stores reviews directly into the store database via function calling.
 - **Fluid Multi-Step Cart & Morphing Drawer:** Interactive shopping cart with smooth spring physics when advancing from product selection to delivery information and confirmation.
 - **Fintech-Style Financial Dashboard (`/dashboard`):** Real-time tracking of settled gross revenue, pending WhatsApp pipeline, average order value (AOV), and conversion rates with interactive revenue trajectory charts.
 - **Comprehensive Order Lifecycle Control (`/orders`):** Full visibility into orders with AI management tags (`managed_by_ai`), payment proof inspection, tracking number inputs, and 1-tap WhatsApp buyer actions.
@@ -72,9 +73,12 @@ The platform features an autonomous AI commerce copilot located at `api/whatsapp
        ├── 1. In-Memory & Database Deduplication Guard (Prevents retry loops)
        ├── 2. Parallel Context Retrieval (Store, Active Products, Orders, Chat History)
        ├── 3. Google Gemini REST API (with Autonomous Function Calling)
+       │       ├── Models: gemini-3.1-flash-lite (Default), gemini-3.8-flash, gemini-flash-latest
        │       ├── Tool: check_stock (Verify inventory & variants)
        │       ├── Tool: create_order_draft (Drafts new order into Supabase)
-       │       └── Tool: confirm_buyer_payment (Verifies transfer proof -> Sets PAID)
+       │       ├── Tool: confirm_buyer_payment (Multimodal Vision OCR extracts bank/sender info -> Sets PAID)
+       │       ├── Tool: update_order_status (Real-time order transitions)
+       │       └── Tool: submit_customer_review (Collects 1-5 star ratings directly in WhatsApp)
        ├── 4. Log Session to PostgreSQL (ai_chat_sessions)
        │
        ▼ Outbound Reply via https://api.fonnte.com/send
@@ -88,7 +92,7 @@ Merchants have full autonomous control over their AI Copilot:
 - **Brand Persona & Tone:** Define how the AI greets and talks with buyers (e.g., warm Balinese hospitality, formal boutique, or casual streetwear).
 - **Custom Operational Instructions:** Provide specific store rules, promo codes, delivery policies, or FAQs.
 - **Payment & Bank Instructions:** Set BCA, Mandiri, BRI, or QRIS instructions dispatched automatically when orders are finalized.
-- **Model Selection:** Choose between `gemini-3.1-flash-lite`, `gemini-3.8-flash`, or custom models.
+- **Model Selection:** Choose between `gemini-3.1-flash-lite` (Recommended - Ultra-fast & Stable), `gemini-3.8-flash` (Flagship Reasoning Model), or `gemini-flash-latest` (Auto-updating Latest Model).
 - **Product AI Context:** Add custom selling notes to individual catalog items that the AI references during customer questions.
 
 ---
@@ -99,7 +103,7 @@ Merchants have full autonomous control over their AI Copilot:
 
 - **Frontend Core:** [React 19](https://react.dev/) + [Vite 6](https://vitejs.dev/) Single Page Application (SPA).
 - **Type Safety:** [TypeScript 5.7](https://www.typescriptlang.org/) for robust end-to-end interface contracts.
-- **AI Engine:** [Google Gemini API](https://ai.google.dev/) (`gemini-3.1-flash-lite`) with function calling tools and conversation history memory.
+- **AI Engine:** [Google Gemini API](https://ai.google.dev/) (`gemini-3.1-flash-lite` default, with `gemini-3.8-flash` & `gemini-flash-latest` support) with multimodal vision OCR, function calling tools, and conversation history memory.
 - **WhatsApp Gateway:** [Fonnte API](https://fonnte.com/) for bidirectional message dispatch and media webhook reception.
 - **Styling & Design System:** [Tailwind CSS v3.4](https://tailwindcss.com/) with an editorial warm cream canvas palette, serif typography hierarchy, and accessible contrast ratios.
 - **State Management:** [Zustand](https://github.com/pmndrs/zustand) with persistent local storage hydration for cart and authentication sessions.

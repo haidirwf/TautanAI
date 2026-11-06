@@ -319,7 +319,7 @@ export async function processIncomingWhatsAppMessage(
     return { reply: 'Halo! Mohon maaf sistem AI kami sedang dalam konfigurasi kunci API. Pesan Anda segera dibalas penjual.' }
   }
 
-  const modelName = store.ai_model || process.env.VITE_GEMINI_MODEL || 'gemini-2.0-flash'
+  const modelName = store.ai_model || process.env.VITE_GEMINI_MODEL || 'gemini-3.1-flash-lite'
   const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`
 
   // Prepare Catalog Context String
