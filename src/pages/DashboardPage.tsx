@@ -10,8 +10,9 @@ import {
   Copy,
   Check,
   Star,
+  Bot,
 } from 'lucide-react'
-import type { DashboardMetrics, Order } from '@/types'
+import type { DashboardMetrics, Order, Store } from '@/types'
 import { api } from '@/lib/supabase'
 import { formatIDR } from '@/lib/utils'
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout'
@@ -31,6 +32,8 @@ export function DashboardPage() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
   const [recentOrders, setRecentOrders] = useState<Order[]>([])
   const [totalCustomers, setTotalCustomers] = useState(0)
+  const [storeInfo, setStoreInfo] = useState<Store | null>(null)
+  const [aiOrdersCount, setAiOrdersCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [isLinkCopied, setIsLinkCopied] = useState(false)
   const navigate = useNavigate()
@@ -67,13 +70,20 @@ export function DashboardPage() {
       }
       setIsLoading(true)
       try {
-        const [metricData, ordersData] = await Promise.all([
+        const [metricData, ordersData, storeData] = await Promise.all([
           api.getDashboardMetrics(storeId),
           api.getOrders(storeId),
+          user?.storeSlug
+            ? api.getStoreBySlug(user.storeSlug)
+            : user?.id
+            ? api.getStoreByUserId(user.id)
+            : null,
         ])
         setMetrics(metricData)
         setRecentOrders(ordersData.slice(0, 5))
         setTotalCustomers(new Set(ordersData.map((o) => o.buyer_phone).filter(Boolean)).size)
+        setStoreInfo(storeData)
+        setAiOrdersCount(ordersData.filter((o) => o.managed_by_ai).length)
       } catch (err) {
         console.error('Error loading metrics', err)
       } finally {
@@ -218,6 +228,53 @@ export function DashboardPage() {
           </div>
         </div>
 
+        {/* Autonomous Copilot Status Bar - Clean, Artisanal, Zero Dot-Pills */}
+        <div className="rounded-2xl border border-[#e8e2d9] bg-white p-4 sm:p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="size-10 rounded-xl bg-[#faf4ed] border border-[#cc785c]/25 flex items-center justify-center text-[#cc785c] shrink-0">
+              <Bot className="size-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="font-sans text-sm sm:text-base font-bold text-[#141413]">
+                  Asisten WhatsApp Otonom
+                </h2>
+                {storeInfo?.ai_enabled ? (
+                  <span className="px-2 py-0.5 rounded-md bg-[#edf7ee] text-[#1e612f] border border-[#2e7d32]/20 text-[11px] font-semibold flex items-center gap-1">
+                    <Check className="size-3 text-emerald-600" />
+                    Siaga 24 Jam
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-md bg-[#faf8f5] text-[#706c64] border border-[#e8e2d9] text-[11px] font-medium">
+                    Nonaktif
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[#706c64] mt-0.5">
+                {storeInfo?.ai_enabled
+                  ? `Bertenaga ${storeInfo?.ai_model || 'gemini-3.1-flash-lite'} • Menjawab tanya stok, menyusun invoice, & verifikasi transfer secara mandiri.`
+                  : 'Aktifkan asisten AI di pengaturan agar tokomu dapat melayani chat & memvalidasi bukti transfer otomatis.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+            <div className="hidden lg:flex flex-col text-right">
+              <span className="text-[10px] uppercase font-mono tracking-wider text-[#8c867b]">Otomatisasi AI</span>
+              <span className="text-xs font-bold text-[#141413]">
+                {aiOrdersCount} Pesanan Dikelola
+              </span>
+            </div>
+            <Link
+              to="/dashboard/settings"
+              className="h-8 px-3.5 rounded-lg bg-[#faf8f5] hover:bg-[#efe9de] border border-[#e8e2d9] text-xs font-semibold text-[#141413] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+            >
+              <span>Pengaturan AI</span>
+              <ArrowRight className="size-3 text-[#cc785c]" />
+            </Link>
+          </div>
+        </div>
+
         {/* 4-Metric Connected Bar - Clean, Uniform & Tabular Numbers */}
         <div className="rounded-2xl border border-[#e8e2d9] bg-[#e8e2d9] overflow-hidden shadow-2xs grid grid-cols-2 lg:grid-cols-4 gap-px">
           {/* 1. Pendapatan selesai */}
@@ -350,13 +407,21 @@ export function DashboardPage() {
                     className="p-3.5 sm:p-4 lg:px-6 hover:bg-[#faf8f5]/70 transition-colors flex flex-col lg:grid lg:grid-cols-12 gap-2.5 lg:gap-3 lg:items-center cursor-pointer group"
                   >
                     <div className="min-w-0 lg:col-span-5">
-                      <div className="flex items-center justify-between lg:justify-start gap-2">
+                      <div className="flex items-center justify-between lg:justify-start gap-2 flex-wrap">
                         <span className="font-semibold text-sm text-[#141413] group-hover:text-[#cc785c] transition-colors truncate">
                           {order.buyer_name}
                         </span>
-                        <span className="font-mono text-[11px] text-[#8c867b] shrink-0 bg-[#faf8f5] px-1.5 py-0.5 rounded border border-[#e8e2d9]/60">
-                          {order.order_code}
-                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="font-mono text-[11px] text-[#8c867b] bg-[#faf8f5] px-1.5 py-0.5 rounded border border-[#e8e2d9]/60">
+                            {order.order_code}
+                          </span>
+                          {order.managed_by_ai && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-[#faf4ed] text-[#8c4327] border border-[#cc785c]/25 flex items-center gap-1">
+                              <Bot className="size-2.5 text-[#cc785c]" />
+                              <span>AI Copilot</span>
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <p className="text-xs text-[#706c64] mt-0.5 line-clamp-1">
                         {order.items_snapshot.map((i) => `${i.quantity}x ${i.product_name}`).join(', ')}
