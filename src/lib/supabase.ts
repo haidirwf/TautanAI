@@ -692,6 +692,7 @@ export const api = {
     trackingNumber?: string
     sellerNote?: string
   }): Promise<{ success: boolean; message?: string }> {
+    // 1. Try serverless / local dev endpoint
     try {
       const res = await fetch('/api/notify', {
         method: 'POST',
@@ -707,13 +708,130 @@ export const api = {
       })
       if (res.ok) {
         const data = await res.json()
-        return data
+        if (data && data.success) return data
       }
-      const errData = await res.json().catch(() => null)
-      return { success: false, message: errData?.error || 'Gagal mengirim notifikasi status' }
+      const text = await res.text()
+      try {
+        const json = JSON.parse(text)
+        if (json?.error && res.status !== 404) {
+          return { success: false, message: json.error }
+        }
+      } catch {}
     } catch (e: any) {
-      console.warn('API /api/notify request error:', e)
-      return { success: false, message: e.message || 'Koneksi pengiriman notifikasi terputus' }
+      console.warn('/api/notify fetch error, executing direct browser fallback:', e)
+    }
+
+    // 2. Direct browser fallback for localhost dev
+    try {
+      let order: Order | null = null
+      if (orderId) {
+        if (isSupabaseConfigured && supabase) {
+          const { data } = await supabase.from('orders').select('*').eq('id', orderId).maybeSingle()
+          order = data
+        }
+        if (!order) {
+          order = getStoredOrders().find((o) => o.id === orderId) || null
+        }
+      }
+
+      if (!order && orderCode) {
+        const cleanCode = orderCode.replace(/^#/, '').trim()
+        if (isSupabaseConfigured && supabase) {
+          const { data } = await supabase.from('orders').select('*').ilike('order_code', `%${cleanCode}%`).maybeSingle()
+          order = data
+        }
+        if (!order) {
+          order = getStoredOrders().find((o) => o.order_code.includes(cleanCode)) || null
+        }
+      }
+
+      if (!order) {
+        return { success: false, message: 'Pesanan tidak ditemukan' }
+      }
+
+      let store: Store | null = null
+      if (isSupabaseConfigured && supabase && order.store_id) {
+        const { data } = await supabase.from('stores').select('*').eq('id', order.store_id).maybeSingle()
+        store = data
+      }
+
+      const fonnteToken = store?.fonnte_token || (import.meta as any).env?.VITE_FONNTE_TOKEN || ''
+      if (!fonnteToken) {
+        return {
+          success: false,
+          message: 'Token Fonnte WhatsApp belum diisi pada menu Pengaturan Toko.',
+        }
+      }
+
+      let cleanPhone = String(order.buyer_phone || '').replace(/@.*$/, '').replace(/[^0-9]/g, '')
+      if (cleanPhone.startsWith('0')) {
+        cleanPhone = '62' + cleanPhone.slice(1)
+      } else if (cleanPhone.startsWith('8')) {
+        cleanPhone = '62' + cleanPhone
+      }
+
+      const storeName = store?.name || 'Toko Kami'
+      const buyerName = order.buyer_name || 'Kak'
+      const orderDisplayCode = order.order_code || orderCode || 'ORD'
+      const statusUpper = String(newStatus).toUpperCase()
+
+      let messageText = ''
+      switch (statusUpper) {
+        case 'PROCESSING':
+          messageText = `Halo Kak *${buyerName}*! 🙏\n\nKabar baik dari *${storeName}*. Pesanan Kakak:\n📋 Kode: *#${orderDisplayCode}*\n\nStatus saat ini telah diperbarui menjadi:\n📦 *SEDANG DIPROSES (PROCESSING)*\n\nPesanan Kakak sedang kami siapkan dan kemas dengan rapi. Kami akan mengabarkan kembali begitu paket siap diserahkan ke kurir ya Kak.\n\nTerima kasih banyak atas kepercayaannya berbelanja di ${storeName}! 😊`
+          break
+        case 'SHIPPED':
+          messageText = `Halo Kak *${buyerName}*! 🚀\n\nPesanan Kakak dari *${storeName}* telah dikirimkan:\n📋 Kode Pesanan: *#${orderDisplayCode}*\n🚚 Ekspedisi / Kurir: *${courierName || order.courier_name || 'Kurir Pengiriman'}*\n${
+            trackingNumber || order.tracking_number ? `📦 No. Resi: *${trackingNumber || order.tracking_number}*\n` : ''
+          }\nStatus saat ini:\n🚚 *DALAM PENGIRIMAN (SHIPPED)*\n\nMohon ditunggu kedatangan paketnya ya Kak.\n\nTerima kasih banyak! 🙏`
+          break
+        case 'COMPLETED':
+          messageText = `Halo Kak *${buyerName}*! 🎉\n\nPesanan Kakak:\n📋 Kode: *#${orderDisplayCode}*\n\nTelah dinyatakan:\n✅ *SELESAI (COMPLETED)*\n\nTerima kasih banyak telah berbelanja di *${storeName}*! Semoga produk yang diterima memuaskan dan bermanfaat ya Kak.\n\nJika Kakak berkenan, kami sangat menghargai ulasan di etalase kami:\n⭐ https://tautan.site/${store?.slug || ''}\n\nSampai jumpa di pesanan berikutnya! 🙏`
+          break
+        case 'PAID':
+          messageText = `Halo Kak *${buyerName}*! 🙏\n\nPembayaran pesanan Kakak telah berhasil diverifikasi oleh tim *${storeName}*:\n📋 Kode Pesanan: *#${orderDisplayCode}*\n💰 Total Tagihan: *Rp${Number(order.total_amount || order.subtotal).toLocaleString('id-ID')}*\n\nStatus saat ini:\n✅ *LUNAS (PAID)*\n\nPesanan Kakak akan segera masuk ke tahap pemrosesan dan pengemasan. Terima kasih banyak! 😊`
+          break
+        case 'CANCELLED':
+          messageText = `Halo Kak *${buyerName}*.\n\nKami menginformasikan bahwa pesanan Kakak (*#${orderDisplayCode}*) telah diubah statusnya menjadi *DIBATALKAN (CANCELLED)*.\n${
+            sellerNote || order.seller_internal_note ? `\nCatatan Toko: ${sellerNote || order.seller_internal_note}\n` : ''
+          }\nTerima kasih! 🙏`
+          break
+        default:
+          messageText = `Halo Kak *${buyerName}*! Status pesanan *#${orderDisplayCode}* di *${storeName}* telah diperbarui menjadi *${statusUpper}*. Terima kasih! 🙏`
+          break
+      }
+
+      const fRes = await fetch('https://api.fonnte.com/send', {
+        method: 'POST',
+        headers: {
+          Authorization: fonnteToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          target: cleanPhone,
+          message: messageText,
+          countryCode: '62',
+        }),
+      })
+
+      const fData = await fRes.json().catch(() => null)
+      if (fData && fData.status === false) {
+        return { success: false, message: fData.reason || 'Gagal mengirim pesan via Fonnte WhatsApp' }
+      }
+
+      if (isSupabaseConfigured && supabase && store?.id) {
+        supabase.from('ai_chat_sessions').insert([{
+          store_id: store.id,
+          buyer_phone: cleanPhone,
+          role: 'model',
+          content: messageText,
+        }]).then(() => {})
+      }
+
+      return { success: true, message: 'Notifikasi terkirim' }
+    } catch (fallbackErr: any) {
+      console.error('Client direct notification error:', fallbackErr)
+      return { success: false, message: fallbackErr?.message || 'Gagal menghubungi WhatsApp gateway' }
     }
   },
 
