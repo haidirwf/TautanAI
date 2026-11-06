@@ -208,6 +208,20 @@ export function DashboardPage() {
               </button>
             </div>
 
+            {/* Asisten AI Quick Button beside store link & tambah produk */}
+            <Link
+              to="/dashboard/pengaturan"
+              className="flex-1 sm:flex-initial h-9 px-3 rounded-lg bg-white hover:bg-[#faf8f5] border border-[#e8e2d9] text-xs font-medium text-[#141413] flex items-center justify-center gap-1.5 shadow-2xs transition-colors shrink-0"
+              title="Kelola Asisten AI WhatsApp"
+            >
+              <Bot className="size-3.5 text-[#cc785c]" />
+              <span className="hidden sm:inline">Asisten AI</span>
+              <span className="sm:hidden">AI</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#faf4ed] text-[#8c4327] border border-[#cc785c]/25">
+                24/7
+              </span>
+            </Link>
+
             <button
               type="button"
               onClick={() => setIsAddProductOpen(true)}
