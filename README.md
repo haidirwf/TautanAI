@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="public/favicon.svg" alt="tautan.site Logo" width="100" height="100" />
+  <img src="public/favicon.svg" alt="tautanAI Logo" width="100" height="100" />
 
-  # tautan.site
+  # tautanAI
   **Autonomous AI-Powered WhatsApp Commerce & Micro-Catalogue Storefront for Indonesian SMBs**
 
 [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](package.json)
@@ -18,7 +18,7 @@
 
 <br />
 
-**tautan.site** is a modern, open-source multi-tenant platform designed for Indonesian small-and-medium businesses (SMBs), independent online sellers, and creator-merchants. It unites a social link-in-bio profile with an interactive micro-catalogue storefront, direct WhatsApp checkout with **0% transaction fees**, a professional fintech-grade merchant dashboard, and an **Autonomous 24/7 WhatsApp AI Agent Copilot** powered by **Google Gemini** and **Fonnte** to automatically answer buyer inquiries, draft orders, and verify bank transfer payments in real time.
+**tautanAI** is a modern, open-source multi-tenant platform designed for Indonesian small-and-medium businesses (SMBs), independent online sellers, and creator-merchants. It unites a social link-in-bio profile with an interactive micro-catalogue storefront, direct WhatsApp checkout with **0% transaction fees**, a professional fintech-grade merchant dashboard, and an **Autonomous 24/7 WhatsApp AI Agent Copilot** powered by **Google Gemini** and **Fonnte** to automatically answer buyer inquiries, draft orders, and verify bank transfer payments in real time.
 
 ---
 
@@ -39,7 +39,7 @@
 
 ## Key Features
 
-- **Instant Storefront & Onboarding (`tautan.site/:slug`):** Launch a personalized, high-conversion storefront in seconds with custom brand avatar, bio, and social links.
+- **Instant Storefront & Onboarding (`/:slug`):** Launch a personalized, high-conversion storefront in seconds with custom brand avatar, bio, and social links.
 - **Autonomous WhatsApp AI Sales Agent:** 24/7 AI Copilot powered by Google Gemini handles buyer chat conversations, checks catalog inventory, recommends products, creates order drafts, and verifies payment receipts directly inside WhatsApp.
 - **Direct WhatsApp Checkout (0% Fees):** No third-party payment gateway cuts. The frictionless shopping cart formats orders into clean, ready-to-send WhatsApp messages directly to the seller's active WhatsApp number.
 - **Automated Payment & Proof Verification:** Buyers can upload or send transfer receipt screenshots via WhatsApp. The AI autonomously matches the payment, tags seller notes, and flips the order status from `PENDING_WA` to `PAID` instantly.
@@ -95,7 +95,7 @@ Merchants have full autonomous control over their AI Copilot:
 
 ## Architecture & Technology Stack
 
-**tautan.site** is built for maximum speed, responsiveness, and zero-maintenance reliability:
+**tautanAI** is built for maximum speed, responsiveness, and zero-maintenance reliability:
 
 - **Frontend Core:** [React 19](https://react.dev/) + [Vite 6](https://vitejs.dev/) Single Page Application (SPA).
 - **Type Safety:** [TypeScript 5.7](https://www.typescriptlang.org/) for robust end-to-end interface contracts.
@@ -127,8 +127,8 @@ Before running the project locally, ensure you have:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/haidirwf/tautantoko.git tautan-site
-cd tautan-site
+git clone https://github.com/haidirwf/tautantoko.git tautan-ai
+cd tautan-ai
 ```
 
 ### 2. Install Dependencies
@@ -187,7 +187,7 @@ The production-ready static assets will be compiled into the `dist/` directory.
 ## Project Directory Structure
 
 ```text
-tautan.site/
+tautanAI/
 ├── api/
 │   └── whatsapp.ts           # Autonomous WhatsApp AI Webhook & Fonnte Dispatcher
 ├── public/
@@ -245,7 +245,7 @@ tautan.site/
 
 ## Security Hardening & Resilience
 
-**tautan.site** implements multi-layered security and operational resilience:
+**tautanAI** implements multi-layered security and operational resilience:
 
 - **Dual-Layer Webhook Deduplication:** Combines an in-memory sliding cache (15-minute TTL) with database-level verification in `ai_chat_sessions` to eliminate duplicate message processing and prevent Fonnte 15-retry loops.
 - **Concurrent In-Flight Lock:** Fast 45-second debounce ensures that duplicate webhook requests arriving simultaneously across different serverless instances cannot trigger double replies.
@@ -303,5 +303,5 @@ Please check [SECURITY.md](SECURITY.md) for vulnerability reporting guidelines.
 This project is licensed under the **[MIT License](LICENSE)**.
 
 ```text
-Copyright (c) 2026 tautan.site contributors
+Copyright (c) 2026 tautanAI contributors
 ```
