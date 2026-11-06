@@ -677,6 +677,46 @@ export const api = {
     throw new Error('Order not found')
   },
 
+  async notifyCustomerOrderStatus({
+    orderId,
+    orderCode,
+    newStatus,
+    courierName,
+    trackingNumber,
+    sellerNote,
+  }: {
+    orderId?: string
+    orderCode?: string
+    newStatus: OrderStatus
+    courierName?: string
+    trackingNumber?: string
+    sellerNote?: string
+  }): Promise<{ success: boolean; message?: string }> {
+    try {
+      const res = await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          orderCode,
+          newStatus,
+          courierName,
+          trackingNumber,
+          sellerNote,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        return data
+      }
+      const errData = await res.json().catch(() => null)
+      return { success: false, message: errData?.error || 'Gagal mengirim notifikasi status' }
+    } catch (e: any) {
+      console.warn('API /api/notify request error:', e)
+      return { success: false, message: e.message || 'Koneksi pengiriman notifikasi terputus' }
+    }
+  },
+
   async getDashboardMetrics(storeId: string): Promise<DashboardMetrics> {
     const orders = await this.getOrders(storeId)
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { MessageCircle, Save, MapPin, Bot, ShieldCheck, ExternalLink, Image as ImageIcon } from 'lucide-react'
 import type { Order, OrderStatus } from '@/types'
 import { formatIDR, sanitizeWhatsApp } from '@/lib/utils'
+import { api } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Modal } from '@/components/ui/modal'
@@ -21,6 +22,7 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
   const [courierName, setCourierName] = useState<string>('')
   const [trackingNumber, setTrackingNumber] = useState<string>('')
   const [sellerNote, setSellerNote] = useState<string>('')
+  const [notifyBuyer, setNotifyBuyer] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -31,6 +33,7 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
       setCourierName(order.courier_name || '')
       setTrackingNumber(order.tracking_number || '')
       setSellerNote(order.seller_internal_note || '')
+      setNotifyBuyer(true)
     }
   }, [order])
 
@@ -42,6 +45,7 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
     e.preventDefault()
     setIsSaving(true)
     try {
+      const isStatusChanged = order.status !== status
       await onSave(order.id, status, {
         shipping_fee: shippingFee,
         total_amount: calculatedTotal,
@@ -50,6 +54,27 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
         tracking_number: trackingNumber,
         seller_internal_note: sellerNote,
       })
+
+      // Send WhatsApp AI notification if enabled and status is relevant
+      if (notifyBuyer && (isStatusChanged || ['PROCESSING', 'SHIPPED', 'COMPLETED', 'PAID', 'CANCELLED'].includes(status))) {
+        api.notifyCustomerOrderStatus({
+          orderId: order.id,
+          orderCode: order.order_code,
+          newStatus: status,
+          courierName,
+          trackingNumber,
+          sellerNote,
+        }).then((res) => {
+          if (res.success) {
+            toast.success('Notifikasi WA Terkirim', `AI Copilot mengirimkan pesan status terbaru ke WhatsApp ${order.buyer_name}.`)
+          } else if (res.message) {
+            toast.error('Notifikasi WhatsApp', res.message)
+          }
+        }).catch((err) => {
+          console.warn('Notification error:', err)
+        })
+      }
+
       onClose()
       toast.success('Pesanan Diperbarui', `Rincian pesanan ${order.order_code} berhasil disimpan.`)
     } catch (error) {
@@ -273,6 +298,31 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
             onChange={(e) => setSellerNote(e.target.value)}
             className="w-full h-9 sm:h-10 px-3 sm:px-3.5 rounded-xl bg-white border border-[#e8e2d9] text-xs sm:text-sm text-[#141413] placeholder:text-[#a09a8f] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
           />
+        </div>
+
+        {/* WhatsApp AI Auto-Notification Toggle */}
+        <div className="p-3 sm:p-3.5 rounded-xl bg-[#faf8f5] border border-[#e8e2d9] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="size-8 rounded-lg bg-white border border-[#e8e2d9] flex items-center justify-center text-[#cc785c] shrink-0">
+              <Bot className="size-4" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-semibold text-[#141413] block">Notifikasi WhatsApp AI Otomatis</span>
+              <p className="text-[11px] text-[#706c64] truncate">
+                Kirim pesan pembaruan status ke WhatsApp pembeli ({order.buyer_phone})
+              </p>
+            </div>
+          </div>
+
+          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={notifyBuyer}
+              onChange={(e) => setNotifyBuyer(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-10 h-5.5 bg-[#e8e2d9] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-[#cc785c]"></div>
+          </label>
         </div>
 
         {/* Financial Summary & Save Button */}
