@@ -185,21 +185,26 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
         </div>
 
         {/* Data Rekening Pembeli */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <input
-            type="text"
-            placeholder="Nama rekening pembeli"
-            value={paymentSenderName}
-            onChange={(e) => setPaymentSenderName(e.target.value)}
-            className="w-full h-9 sm:h-10 px-3 sm:px-3.5 rounded-xl bg-white border border-[#e8e2d9] text-xs sm:text-sm text-[#141413] placeholder:text-[#a09a8f] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
-          />
-          <input
-            type="text"
-            placeholder="Nomor rekening atau e-wallet pembeli"
-            value={paymentSenderAccount}
-            onChange={(e) => setPaymentSenderAccount(e.target.value)}
-            className="w-full h-9 sm:h-10 px-3 sm:px-3.5 rounded-xl bg-white border border-[#e8e2d9] text-xs sm:text-sm font-mono text-[#141413] placeholder:text-[#a09a8f] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
-          />
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-[#141413] block">
+            Data Rekening Pembeli
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <input
+              type="text"
+              placeholder="Nama rekening pembeli"
+              value={paymentSenderName}
+              onChange={(e) => setPaymentSenderName(e.target.value)}
+              className="w-full h-9 sm:h-10 px-3 sm:px-3.5 rounded-xl bg-white border border-[#e8e2d9] text-xs sm:text-sm text-[#141413] placeholder:text-[#a09a8f] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
+            />
+            <input
+              type="text"
+              placeholder="Nomor rekening atau e-wallet pembeli"
+              value={paymentSenderAccount}
+              onChange={(e) => setPaymentSenderAccount(e.target.value)}
+              className="w-full h-9 sm:h-10 px-3 sm:px-3.5 rounded-xl bg-white border border-[#e8e2d9] text-xs sm:text-sm font-mono text-[#141413] placeholder:text-[#a09a8f] focus:outline-none focus:border-[#cc785c] focus:ring-1 focus:ring-[#cc785c] shadow-2xs"
+            />
+          </div>
         </div>
 
         {/* Order Lifecycle Status Picker */}
