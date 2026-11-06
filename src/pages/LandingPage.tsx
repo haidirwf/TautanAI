@@ -405,9 +405,12 @@ export function LandingPage() {
 
                 <div className="p-3.5 rounded-2xl bg-white border border-[#e6dfd8] flex items-center gap-3 shadow-2xs transition-all hover:border-[#cc785c]/40 hover:-translate-y-0.5">
                   <img
-                    src="https://images.unsplash.com/photo-1607344645866-009c320c5ab8?w=200&auto=format&fit=crop&q=80"
+                    src="https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=200&auto=format&fit=crop&q=80"
                     alt="Kain Tenun Endek Bali"
                     className="size-12 rounded-xl object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=200&auto=format&fit=crop&q=80'
+                    }}
                   />
                   <div>
                     <span className="text-xs font-bold text-[#141413] block">Kain Endek Mastuli</span>
