@@ -8,6 +8,7 @@ import {
   Package,
   RefreshCw,
   X,
+  Bot,
 } from 'lucide-react'
 import type { Order, OrderStatus } from '@/types'
 import { api } from '@/lib/supabase'
@@ -61,9 +62,10 @@ export function OrdersPage() {
     setIsEditModalOpen(true)
   }
 
-  // Filter tabs - simple & clean
+  // Filter tabs - simple & clean with AI Managed filter
   const tabs = [
     { id: 'ALL', label: 'Semua' },
+    { id: 'AI_MANAGED', label: 'Diproses AI' },
     { id: 'PENDING_WA', label: 'Menunggu WA' },
     { id: 'PROCESSING', label: 'Diproses' },
     { id: 'SHIPPED', label: 'Dikirim' },
@@ -72,7 +74,12 @@ export function OrdersPage() {
   ]
 
   const filteredOrders = orders.filter((order) => {
-    const matchesStatus = selectedStatus === 'ALL' || order.status === selectedStatus
+    const matchesStatus =
+      selectedStatus === 'ALL'
+        ? true
+        : selectedStatus === 'AI_MANAGED'
+        ? Boolean(order.managed_by_ai)
+        : order.status === selectedStatus
     const query = searchQuery.toLowerCase().trim()
     const matchesSearch =
       query === '' ||
@@ -126,6 +133,8 @@ export function OrdersPage() {
               const count =
                 filter.id === 'ALL'
                   ? orders.length
+                  : filter.id === 'AI_MANAGED'
+                  ? orders.filter((o) => o.managed_by_ai).length
                   : orders.filter((o) => o.status === filter.id).length
               const isSelected = selectedStatus === filter.id
 
@@ -217,8 +226,9 @@ export function OrdersPage() {
                           {order.order_code}
                         </span>
                         {order.managed_by_ai && (
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#f5efe6] text-[#706c64] border border-[#e8e2d9] shrink-0">
-                            AI Agent
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#faf4ed] text-[#8c4327] border border-[#cc785c]/25 flex items-center gap-1 shrink-0 font-semibold">
+                            <Bot className="size-3 text-[#cc785c]" />
+                            <span>AI Copilot</span>
                           </span>
                         )}
                         <Badge status={order.status} />
@@ -323,13 +333,14 @@ export function OrdersPage() {
                       >
                         {/* 1. Pesanan */}
                         <td className="py-3.5 px-5 align-middle">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-mono text-xs font-semibold text-[#141413]">
                               {order.order_code}
                             </span>
                             {order.managed_by_ai && (
-                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#f5efe6] text-[#706c64] border border-[#e8e2d9]">
-                                AI Agent
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#faf4ed] text-[#8c4327] border border-[#cc785c]/25 flex items-center gap-1 shrink-0 font-semibold">
+                                <Bot className="size-3 text-[#cc785c]" />
+                                <span>AI Copilot</span>
                               </span>
                             )}
                           </div>

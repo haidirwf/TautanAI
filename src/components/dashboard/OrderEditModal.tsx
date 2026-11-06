@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { MessageCircle, Save, MapPin } from 'lucide-react'
+import { MessageCircle, Save, MapPin, Bot, ShieldCheck, ExternalLink, Image as ImageIcon } from 'lucide-react'
 import type { Order, OrderStatus } from '@/types'
 import { formatIDR, sanitizeWhatsApp } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -127,23 +127,39 @@ export function OrderEditModal({ order, isOpen, onClose, onSave }: OrderEditModa
           </div>
 
           {order.managed_by_ai && (
-            <div className="pt-2.5 border-t border-[#e8e2d9]/60">
-              <span className="text-[10px] uppercase font-mono tracking-wider text-[#706c64] block mb-1">
-                Layanan AI WhatsApp Agent
-              </span>
-              <p className="text-xs text-[#5c5850]">
-                {order.ai_summary || 'Pesanan dan status diproses secara otonom oleh AI WhatsApp Copilot.'}
-              </p>
-              {order.payment_proof_url && (
-                <a
-                  href={order.payment_proof_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block text-xs text-[#cc785c] underline font-medium mt-1"
-                >
-                  Lihat Lampiran Bukti Transfer Pelanggan
-                </a>
-              )}
+            <div className="pt-3 border-t border-[#e8e2d9]/60">
+              <div className="p-3.5 rounded-xl bg-[#faf4ed]/60 border border-[#cc785c]/25 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono font-semibold uppercase tracking-wider text-[#8c4327] flex items-center gap-1.5">
+                    <Bot className="size-3.5 text-[#cc785c]" />
+                    <span>Dikelola Asisten AI Otonom</span>
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#edf7ee] text-[#1e612f] border border-[#2e7d32]/20 flex items-center gap-1">
+                    <ShieldCheck className="size-3 text-emerald-600" />
+                    Otomatisasi Aktif
+                  </span>
+                </div>
+                <p className="text-xs text-[#5c5850] leading-relaxed">
+                  {order.ai_summary || 'Pesanan dan status diproses secara otonom oleh AI WhatsApp Copilot.'}
+                </p>
+                {order.payment_proof_url && (
+                  <div className="mt-1 pt-2 border-t border-[#cc785c]/15 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <ImageIcon className="size-4 text-[#cc785c] shrink-0" />
+                      <span className="text-xs font-mono text-[#141413] truncate">Bukti Transfer Pelanggan</span>
+                    </div>
+                    <a
+                      href={order.payment_proof_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 rounded-lg bg-white border border-[#e8e2d9] text-xs font-semibold text-[#cc785c] hover:text-[#a9583e] flex items-center gap-1 shrink-0 transition-colors shadow-2xs"
+                    >
+                      <span>Lihat Foto</span>
+                      <ExternalLink className="size-3" />
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
