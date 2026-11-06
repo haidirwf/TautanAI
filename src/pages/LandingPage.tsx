@@ -8,6 +8,11 @@ import {
   Check,
   ChevronDown,
   ArrowRight,
+  Bot,
+  MessageCircle,
+  CheckCheck,
+  ShieldCheck,
+  Zap,
 } from 'lucide-react'
 import { AuthModal } from '@/components/auth/AuthModal'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -170,23 +175,23 @@ export function LandingPage() {
   const faqItems = [
     {
       q: 'Apa perbedaan tautan.site dengan link bio biasa seperti Linktree?',
-      a: 'Link bio biasa hanya menampilkan daftar tautan pasif. tautan.site menggabungkan tautan profil dengan etalase belanja, sehingga calon pembeli bisa melihat katalog produk, memilih varian, dan mengisi alamat pengiriman langsung. Pesanan terformat otomatis ke WhatsApp Anda tanpa pembeli perlu mengetik ulang.',
+      a: 'Link bio biasa hanya menampilkan tombol tautan pasif. tautan.site menggabungkan etalase belanja visual, checkout WhatsApp berformat rapi (0% komisi), dan Asisten AI 24/7 yang otomatis menjawab pertanyaan stok, membuat pesanan resmi, hingga memverifikasi bukti transfer tanpa campur tangan manual.',
     },
     {
-      q: 'Apakah ada potongan komisi dari setiap penjualan?',
-      a: 'Sama sekali tidak ada potongan komisi (0% platform fee). Semua pembayaran langsung masuk 100% ke rekening bank atau QRIS pribadi yang Anda sediakan.',
+      q: 'Bagaimana cara kerja Asisten AI WhatsApp di tautan.site?',
+      a: 'Asisten AI terhubung langsung ke nomor WhatsApp toko Anda via Fonnte Gateway dan bertenaga Google Gemini. AI membaca data katalog, varian harga, dan catatan khusus produk Anda secara real-time. Saat pembeli bertanya, memesan, atau mengirim foto struk transfer, AI langsung merespons dan memperbarui data di dashboard toko.',
     },
     {
-      q: 'Apakah pembeli wajib membuat akun atau menginstal aplikasi?',
-      a: 'Tidak perlu. Pembeli membuka link di browser HP mereka secara instan, memilih barang, dan langsung checkout ke WhatsApp dalam hitungan detik.',
+      q: 'Bagaimana AI memverifikasi foto bukti transfer dari pembeli?',
+      a: 'Saat pembeli mengirimkan foto tangkapan layar bukti transfer m-Banking di WhatsApp, AI membaca nominal, rekening tujuan, dan mencocokkan dengan kode pesanan. Jika valid, status pesanan otomatis berubah dari Menunggu WA menjadi LUNAS (PAID) di dashboard Anda.',
     },
     {
-      q: 'Bagaimana cara penjual menerima dan mengelola pesanan?',
-      a: 'Saat pembeli checkout, Anda menerima pesan terformat rapi di WhatsApp. Secara bersamaan, rekapan pesanan otomatis tercatat di Dashboard toko Anda untuk memudahkan pengecekan status bayar dan input nomor resi ekspedisi.',
+      q: 'Apakah penjual tetap bisa membalas chat WhatsApp secara manual?',
+      a: 'Bisa kapan saja. Anda memegang kendali penuh atas akun WhatsApp toko. Anda dapat menanggapi pembeli secara langsung, menonaktifkan AI untuk sementara, atau mengedit status pesanan dan nomor resi dari dashboard merchant.',
     },
     {
-      q: 'Apakah saya bisa menggunakan nama tautan sendiri?',
-      a: 'Bisa. Anda mendapatkan alamat ringkas tautan.site/namatokomu secara gratis saat mendaftar. Anda juga dapat mengubah informasi toko, foto produk, dan harga kapan saja.',
+      q: 'Apakah ada potongan komisi dari setiap transaksi penjualan?',
+      a: 'Sama sekali tidak ada potongan (0% platform fee). Semua pembayaran dari pembeli langsung ditransfer 100% ke rekening bank atau QRIS pribadi yang Anda cantumkan di pengaturan toko.',
     },
   ]
 
@@ -196,18 +201,18 @@ export function LandingPage() {
       className="min-h-screen bg-[#faf9f5] text-[#141413] flex flex-col justify-between selection:bg-[#cc785c]/25 selection:text-[#141413] font-sans"
     >
       {/* ==================================================================== */}
-      {/* 1. HERO SECTION (Single Viewport Height: Left Copy & Claim, Right Preview Component) */}
+      {/* 1. HERO SECTION (Autonomous Value Proposition + Interactive Mockup) */}
       {/* ==================================================================== */}
       <section className="px-4 sm:px-6 lg:px-8 py-8 lg:py-0 min-h-[calc(100vh-4rem)] flex items-center justify-center max-w-7xl mx-auto w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center w-full py-4 lg:py-6">
           {/* Left Column: Headline, Subtitle, Claim Input, Trust */}
           <div className="lg:col-span-7 flex flex-col items-start text-left">
             <h1 className="hero-headline font-sans text-3xl sm:text-5xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight text-[#141413] leading-[1.08] max-w-2xl">
-              Satu tautan untuk semua yang kamu <span className="text-[#cc785c]">jual dan bagikan.</span>
+              Etalase tokomu, kini berjualan otomatis dengan <span className="text-[#cc785c]">Asisten WhatsApp 24/7.</span>
             </h1>
 
             <p className="hero-sub mt-4 text-sm sm:text-base lg:text-lg text-[#5c5850] max-w-xl leading-relaxed font-normal">
-              Gantikan link bio pasif dengan etalase belanja modern. Pajang produk, terima pesanan terstruktur, dan sambungkan pembeli langsung ke WhatsApp tanpa potongan komisi.
+              Buka link-in-bio belanja modern dalam 30 detik. Biarkan asisten AI otonom melayani tanya stok, merekap pesanan, dan memverifikasi bukti transfer langsung di WhatsApp tanpa jeda.
             </p>
 
             {/* Minimal Claim Input */}
@@ -236,7 +241,7 @@ export function LandingPage() {
                 </button>
               </form>
 
-              {/* Clean Trust Indicators */}
+              {/* Clean Trust Indicators - Strictly Non-Dot-Pills & Non-Sparkles */}
               <div className="hero-trust flex items-center justify-start gap-x-5 gap-y-2 mt-3.5 text-xs text-[#706c64] flex-wrap font-medium">
                 <span className="flex items-center gap-1.5">
                   <Check className="size-3.5 text-emerald-600 shrink-0" />
@@ -244,72 +249,115 @@ export function LandingPage() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Check className="size-3.5 text-emerald-600 shrink-0" />
-                  Buka Toko 30 Detik
+                  Asisten WhatsApp 24/7
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Check className="size-3.5 text-emerald-600 shrink-0" />
-                  Gratis Selamanya
+                  Verifikasi Transfer Otomatis
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Pure Minimalist Showcase Card with Gentle Float & Interactive Items */}
+          {/* Right Column: Interactive Autonomous Copilot & Storefront Showcase */}
           <div className="hero-card-wrapper lg:col-span-5 flex justify-center lg:justify-end w-full">
             <div className="w-full max-w-sm sm:max-w-md">
               <div className="hero-float-card w-full p-5 sm:p-6 rounded-3xl bg-white border border-[#e6dfd8] shadow-sm hover:shadow-md transition-all text-left">
-                {/* Creator Profile */}
-                <div className="text-center pb-3.5 border-b border-[#f0ece5]">
-                  <div className="size-12 rounded-full bg-[#cc785c] text-white flex items-center justify-center font-bold text-base mx-auto mb-2 shadow-2xs hover:scale-105 transition-transform">
-                    KS
-                  </div>
-                  <h3 className="font-extrabold text-sm text-[#141413]">Kedai Kopi Senja</h3>
-                  <span className="text-xs font-mono text-[#8c867b]">tautan.site/senja</span>
-                  <p className="text-xs text-[#5c5850] mt-1 leading-relaxed">
-                    Biji kopi pilihan Nusantara, diseduh segar setiap hari.
-                  </p>
-                </div>
-
-                {/* Simple Clean Product Items */}
-                <div className="py-3 space-y-2">
-                  <div className="p-3 rounded-2xl bg-[#faf9f5] border border-[#e6dfd8] flex items-center justify-between gap-3 transition-all hover:border-[#cc785c]/40 hover:bg-white hover:-translate-y-0.5 cursor-pointer">
-                    <img
-                      src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=200&auto=format&fit=crop&q=80"
-                      alt="Kopi Susu Aren"
-                      className="size-11 rounded-xl object-cover shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs sm:text-sm font-bold text-[#141413] block truncate">Kopi Susu Aren</span>
-                      <span className="text-xs font-mono text-[#cc785c] font-bold">{formatIDR(22000)}</span>
+                {/* Store Identity & Copilot Badge */}
+                <div className="flex items-center justify-between pb-3.5 border-b border-[#f0ece5]">
+                  <div className="flex items-center gap-3">
+                    <div className="size-11 rounded-full bg-[#cc785c] text-white flex items-center justify-center font-bold text-sm shadow-2xs">
+                      KS
                     </div>
-                    <span className="px-3 py-1 rounded-lg bg-white border border-[#e6dfd8] text-[11px] font-bold text-[#141413] shadow-2xs transition-all hover:bg-[#141413] hover:text-white select-none active:scale-95">
-                      Pesan
-                    </span>
-                  </div>
-
-                  <div className="p-3 rounded-2xl bg-[#faf9f5] border border-[#e6dfd8] flex items-center justify-between gap-3 transition-all hover:border-[#cc785c]/40 hover:bg-white hover:-translate-y-0.5 cursor-pointer">
-                    <img
-                      src="https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=200&auto=format&fit=crop&q=80"
-                      alt="Croissant"
-                      className="size-11 rounded-xl object-cover shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-xs sm:text-sm font-bold text-[#141413] block truncate">Butter Croissant</span>
-                      <span className="text-xs font-mono text-[#cc785c] font-bold">{formatIDR(18000)}</span>
+                    <div>
+                      <h2 className="font-extrabold text-sm text-[#141413]">Kedai Kopi Senja</h2>
+                      <span className="text-xs font-mono text-[#8c867b]">tautan.site/senja</span>
                     </div>
-                    <span className="px-3 py-1 rounded-lg bg-white border border-[#e6dfd8] text-[11px] font-bold text-[#141413] shadow-2xs transition-all hover:bg-[#141413] hover:text-white select-none active:scale-95">
-                      Pesan
-                    </span>
+                  </div>
+                  <div className="px-2.5 py-1 rounded-md bg-[#faf4ed] text-[#8c4327] border border-[#cc785c]/25 text-[11px] font-semibold flex items-center gap-1.5 shrink-0">
+                    <Bot className="size-3.5 text-[#cc785c]" />
+                    <span>AI Copilot 24/7</span>
                   </div>
                 </div>
 
-                {/* Direct Checkout CTA Bar */}
+                {/* Micro Product Row */}
+                <div className="py-3 flex items-center justify-between gap-3 bg-[#faf9f5] px-3.5 rounded-2xl border border-[#e6dfd8] my-3">
+                  <img
+                    src="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=200&auto=format&fit=crop&q=80"
+                    alt="Kopi Susu Aren"
+                    className="size-10 rounded-xl object-cover shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-bold text-[#141413] block truncate">Kopi Susu Aren</span>
+                    <span className="text-xs font-mono text-[#cc785c] font-bold">{formatIDR(22000)}</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-[#706c64] bg-white px-2 py-0.5 rounded border border-[#e6dfd8]">
+                    Stok: 12 cup
+                  </span>
+                </div>
+
+                {/* Autonomous WhatsApp Dialogue Snapshot Mockup */}
+                <div className="space-y-2.5 py-2">
+                  <div className="text-[10px] uppercase font-mono tracking-wider text-[#8c867b] font-semibold text-center pb-1">
+                    Simulasi Chat WhatsApp Otonom
+                  </div>
+
+                  {/* Buyer Message 1 */}
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-xs bg-[#e7fedb] border border-[#cbebb5] text-[#141413] p-2.5 text-xs shadow-2xs">
+                      <p className="leading-snug">Kak, Kopi Susu Aren ready dingin 2 cup? Mau kirim ke Renon.</p>
+                      <span className="text-[9px] text-[#6c855a] font-mono block text-right mt-1">10:14</span>
+                    </div>
+                  </div>
+
+                  {/* AI Copilot Response 1 */}
+                  <div className="flex justify-start">
+                    <div className="max-w-[88%] rounded-2xl rounded-tl-xs bg-white border border-[#e6dfd8] text-[#141413] p-2.5 text-xs shadow-2xs">
+                      <p className="leading-snug">
+                        Halo Kak! Kopi Susu Aren dingin <span className="font-bold text-[#141413]">ready 12 cup</span>. Ke Renon siap dikirim via kurir instan sekarang ya kak.
+                      </p>
+                      <div className="mt-1.5 pt-1.5 border-t border-[#f0ece5] flex items-center justify-between text-[10px] font-mono text-[#706c64]">
+                        <span>Total 2 Cup: {formatIDR(44000)}</span>
+                        <span className="text-[9px] text-[#8c867b]">10:14</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Buyer Payment Proof Upload */}
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-xs bg-[#e7fedb] border border-[#cbebb5] text-[#141413] p-2 text-xs shadow-2xs">
+                      <div className="flex items-center gap-2 bg-white/70 p-1.5 rounded-lg border border-[#cbebb5]/80 mb-1">
+                        <CheckCheck className="size-3.5 text-emerald-700 shrink-0" />
+                        <span className="text-[11px] font-mono font-medium truncate">struk_bca_44000.jpg</span>
+                      </div>
+                      <p className="text-[11px] leading-tight">Sudah saya transfer kak, mohon dicek yaa</p>
+                      <span className="text-[9px] text-[#6c855a] font-mono block text-right mt-0.5">10:15</span>
+                    </div>
+                  </div>
+
+                  {/* AI Automated Payment Verification */}
+                  <div className="flex justify-start">
+                    <div className="max-w-[88%] rounded-2xl rounded-tl-xs bg-[#faf8f5] border border-[#e8e2d9] text-[#141413] p-2.5 text-xs shadow-2xs">
+                      <div className="flex items-center gap-1.5 text-emerald-800 text-[11px] font-semibold mb-1">
+                        <ShieldCheck className="size-3.5 text-emerald-600" />
+                        <span>Transfer Rp44.000 Terverifikasi Otomatis</span>
+                      </div>
+                      <p className="text-[11px] text-[#5c5850] leading-snug">
+                        Pesanan <span className="font-mono font-bold text-[#141413]">#ORD-8821</span> berstatus <span className="text-emerald-700 font-bold">LUNAS</span>. Sedang disiapkan barista!
+                      </p>
+                      <span className="text-[9px] text-[#8c867b] font-mono block text-right mt-1">10:15</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Direct Action */}
                 <button
                   type="button"
                   onClick={() => setIsAuthOpen(true)}
-                  className="w-full py-2.5 rounded-xl bg-[#141413] hover:bg-black text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer group active:scale-98"
+                  className="w-full mt-3 py-2.5 rounded-xl bg-[#141413] hover:bg-black text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer group active:scale-98"
                 >
-                  <span>Buka WhatsApp Toko</span>
+                  <MessageCircle className="size-3.5 text-[#cc785c]" />
+                  <span>Coba Buka Toko dengan AI</span>
                   <ArrowRight className="size-3.5 text-[#cc785c] group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
@@ -319,31 +367,37 @@ export function LandingPage() {
       </section>
 
       {/* ==================================================================== */}
-      {/* 2. BENTO GRID FEATURES (GSAP Directional Entrance from Left & Right) */}
+      {/* 2. BENTO GRID FEATURES (Autonomous AI Pillars & Zero-Commission Architecture) */}
       {/* ==================================================================== */}
       <section id="features" className="scroll-mt-20 border-t border-[#e6dfd8] bg-white px-4 sm:px-6 lg:px-8 py-16 sm:py-24 overflow-hidden">
         <div className="max-w-6xl mx-auto">
           <div className="bento-header text-center max-w-2xl mx-auto mb-12 sm:mb-16">
             <span className="text-xs font-mono uppercase tracking-widest text-[#cc785c] font-bold">
-              Fitur Lengkap
+              Fitur Otonom
             </span>
             <h2 className="font-sans text-3xl sm:text-5xl font-extrabold tracking-tight text-[#141413] mt-2 leading-tight">
-              Semua yang kamu butuhkan untuk berjualan di media sosial.
+              Toko yang tidak pernah tidur, melayani pembeli setiap detik.
             </h2>
             <p className="text-sm sm:text-base text-[#5c5850] mt-3">
-              Dirancang dengan prinsip kesederhanaan: tanpa biaya tersembunyi, tanpa instalasi rumit.
+              Kombinasi etalase link-in-bio modern dan agen AI WhatsApp mandiri untuk melesatkan penjualan UMKM Indonesia.
             </p>
           </div>
 
           <div className="bento-grid grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
-            {/* Bento Card 1: Etalase & Varian (Large - 8 cols, slides from Left) */}
+            {/* Bento Card 1: Autonomous AI Sales Agent (8 cols, Left) */}
             <div className="bento-left md:col-span-8 p-8 sm:p-10 rounded-3xl bg-[#faf9f5] border border-[#e6dfd8] flex flex-col justify-between shadow-2xs group hover:border-[#cc785c]/40 hover:-translate-y-1 hover:shadow-md transition-all duration-300">
               <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="px-2.5 py-1 rounded-md bg-[#faf4ed] text-[#8c4327] border border-[#cc785c]/25 text-xs font-mono font-semibold flex items-center gap-1.5">
+                    <Bot className="size-3 text-[#cc785c]" />
+                    Asisten Otonom 24/7
+                  </span>
+                </div>
                 <h3 className="font-sans text-2xl sm:text-3xl font-extrabold text-[#141413] mb-3 leading-tight">
-                  Pajang Produk dengan <span className="text-[#cc785c]">Foto Jernih & Varian Lengkap</span>
+                  Menjawab Tanya Stok, Varian, & <span className="text-[#cc785c]">Rekomendasi Produk Seketika</span>
                 </h3>
                 <p className="text-sm text-[#5c5850] leading-relaxed max-w-xl">
-                  Unggah foto produk yang otomatis dioptimalkan ke format WebP ringan. Tambahkan pilihan ukuran, rasa, atau warna dengan perhitungan harga otomatis yang transparan bagi pembeli.
+                  Asisten AI membaca katalog aktif dan catatan instruksi khusus toko Anda secara langsung. Saat pembeli bertanya ketersediaan stok, ukuran baju, atau bahan masakan, AI merespons hangat sesuai gaya bahasa merek Anda.
                 </p>
               </div>
 
@@ -358,7 +412,7 @@ export function LandingPage() {
                   <div>
                     <span className="text-xs font-bold text-[#141413] block">Kopi Susu Aren</span>
                     <span className="text-xs font-mono font-bold text-[#cc785c]">Rp 22.000</span>
-                    <span className="text-[10px] text-[#8c867b] block">Varian: Dingin / Hangat</span>
+                    <span className="text-[10px] text-[#8c867b] block">Stok Sinkron Realtime</span>
                   </div>
                 </div>
 
@@ -371,13 +425,13 @@ export function LandingPage() {
                   <div>
                     <span className="text-xs font-bold text-[#141413] block">Artisan Croissant</span>
                     <span className="text-xs font-mono font-bold text-[#cc785c]">Rp 18.000</span>
-                    <span className="text-[10px] text-[#8c867b] block">Varian: Original / Cokelat</span>
+                    <span className="text-[10px] text-[#8c867b] block">Varian Terpilih Otomatis</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Bento Card 2: 0% Komisi (4 cols, slides from Right) */}
+            {/* Bento Card 2: 0% Komisi (4 cols, Right, Dark) */}
             <div className="bento-right md:col-span-4 p-8 sm:p-10 rounded-3xl bg-[#141413] text-white border border-neutral-800 flex flex-col justify-between shadow-md hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
               <div>
                 <div className="font-sans text-5xl sm:text-6xl font-extrabold text-[#cc785c] mb-2 tracking-tight">
@@ -387,43 +441,59 @@ export function LandingPage() {
                   Bebas <span className="text-[#cc785c]">Biaya Platform</span>
                 </h3>
                 <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
-                  Uang penjualan langsung ditransfer ke rekening bank atau QRIS Anda. Tidak ada potongan komisi per transaksi sepeserpun.
+                  Uang pembayaran langsung ditransfer 100% ke rekening bank atau QRIS Anda. Tanpa komisi pihak ketiga dan tanpa penahanan dana.
                 </p>
               </div>
 
-              <div className="mt-8 pt-4 border-t border-neutral-800 text-xs font-mono text-[#cc785c] font-semibold">
-                100% Keuntungan Milik Anda
+              <div className="mt-8 pt-4 border-t border-neutral-800 text-xs font-mono text-[#cc785c] font-semibold flex items-center gap-1.5">
+                <Check className="size-3.5" />
+                <span>100% Keuntungan Milik Penjual</span>
               </div>
             </div>
 
-            {/* Bento Card 3: Checkout WhatsApp (6 cols, slides from Left) */}
+            {/* Bento Card 3: Automated Payment Verification (6 cols, Left) */}
             <div className="bento-left md:col-span-6 p-8 sm:p-10 rounded-3xl bg-[#faf9f5] border border-[#e6dfd8] flex flex-col justify-between shadow-2xs hover:border-[#cc785c]/40 hover:-translate-y-1 hover:shadow-md transition-all duration-300">
               <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="px-2.5 py-1 rounded-md bg-[#edf7ee] text-[#1e612f] border border-[#2e7d32]/20 text-xs font-mono font-semibold flex items-center gap-1.5">
+                    <ShieldCheck className="size-3 text-emerald-600" />
+                    Vision OCR Pembayaran
+                  </span>
+                </div>
                 <h3 className="font-sans text-2xl font-extrabold text-[#141413] mb-3 leading-tight">
-                  Checkout Langsung ke <span className="text-[#cc785c]">WhatsApp</span>
+                  Verifikasi Bukti Transfer <span className="text-[#cc785c]">Secara Otomatis</span>
                 </h3>
                 <p className="text-sm text-[#5c5850] leading-relaxed">
-                  Pembeli tidak perlu mendaftar akun atau mengingat kata sandi. Cukup pilih produk, isi alamat, dan rincian pesanan langsung tersusun rapi di WhatsApp.
+                  Pembeli cukup mengunggah foto struk transfer m-Banking di WhatsApp. AI membaca angka transfer, mencocokkan kode order, dan mengubah status menjadi Lunas di dashboard seketika.
                 </p>
               </div>
 
-              <div className="mt-6 p-3 rounded-xl bg-white border border-[#e6dfd8] text-xs font-mono text-[#5c5850]">
-                "Halo Kak, saya mau pesan 1x Kopi Susu Aren..."
+              <div className="mt-6 p-3.5 rounded-xl bg-white border border-[#e6dfd8] flex items-center justify-between text-xs font-mono">
+                <span className="text-[#5c5850]">Bukti Transfer BCA &rarr; #ORD-8821</span>
+                <span className="px-2 py-0.5 rounded bg-[#edf7ee] text-[#1e612f] font-bold border border-[#2e7d32]/20">
+                  LUNAS
+                </span>
               </div>
             </div>
 
-            {/* Bento Card 4: All-in-One Link Bio (6 cols, slides from Right) */}
+            {/* Bento Card 4: Centralized Storefront & Analytics (6 cols, Right) */}
             <div className="bento-right md:col-span-6 p-8 sm:p-10 rounded-3xl bg-[#faf9f5] border border-[#e6dfd8] flex flex-col justify-between shadow-2xs hover:border-[#cc785c]/40 hover:-translate-y-1 hover:shadow-md transition-all duration-300">
               <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="px-2.5 py-1 rounded-md bg-[#eff6ff] text-[#1d4ed8] border border-[#2563eb]/20 text-xs font-mono font-semibold flex items-center gap-1.5">
+                    <Zap className="size-3 text-blue-600" />
+                    Etalase & Finansial
+                  </span>
+                </div>
                 <h3 className="font-sans text-2xl font-extrabold text-[#141413] mb-3 leading-tight">
-                  Satukan Semua <span className="text-[#cc785c]">Tautan Bisnismu</span>
+                  Etalase Cepat & <span className="text-[#cc785c]">Dashboard Omzet Realtime</span>
                 </h3>
                 <p className="text-sm text-[#5c5850] leading-relaxed">
-                  Sematkan tautan Instagram, TikTok, alamat Google Maps toko fisik, hingga marketplace dalam satu profil elegan yang mudah diingat pembeli.
+                  Sematkan tautan media sosial, katalog mikro, dan pantau omzet terverifikasi harian, pesanan aktif, hingga riwayat pelanggan dalam satu antarmuka minimalis.
                 </p>
               </div>
 
-              <div className="mt-6 flex items-center gap-2 text-xs font-mono text-[#8c867b]">
+              <div className="mt-6 flex items-center justify-between text-xs font-mono text-[#8c867b] border-t border-[#e6dfd8] pt-3">
                 <span>tautan.site/namatokomu</span>
                 <span className="text-[#cc785c] font-bold">Siap Disematkan di Bio</span>
               </div>
@@ -442,10 +512,10 @@ export function LandingPage() {
               Cara Kerja
             </span>
             <h2 className="font-sans text-3xl sm:text-4xl font-extrabold tracking-tight text-[#141413] mt-2">
-              Mulai berjualan dalam 3 langkah ringkas.
+              Mulai berjualan otomatis dalam 3 langkah.
             </h2>
             <p className="text-sm text-[#5c5850] mt-2">
-              Tanpa perlu keahlian teknis coding atau setup server yang membingungkan.
+              Setup praktis tanpa memerlukan keahlian coding atau server yang rumit.
             </p>
           </div>
 
@@ -454,18 +524,18 @@ export function LandingPage() {
               {[
                 {
                   num: '01',
-                  title: 'Klaim Tautan Tokomu',
-                  desc: 'Tentukan nama tokomu dan dapatkan link unik tautan.site/namamu dalam waktu kurang dari 30 detik.',
+                  title: 'Klaim Tautan & Sambung WA',
+                  desc: 'Pilih nama tokomu di tautan.site/namamu dan sambungkan nomor WhatsApp tokomu dalam waktu kurang dari 1 menit.',
                 },
                 {
                   num: '02',
-                  title: 'Pajang Produk & Varian',
-                  desc: 'Upload foto produk favorit, tentukan harga, dan atur pilihan varian agar pembeli bisa memilih mandiri.',
+                  title: 'Upload Produk & Instruksi AI',
+                  desc: 'Pajang foto barang, harga, varian, dan tambahkan catatan selling points agar asisten AI menguasai produkmu.',
                 },
                 {
                   num: '03',
-                  title: 'Pasang di Bio Medsos',
-                  desc: 'Sematkan tautan di bio Instagram & TikTok. Duduk santai dan terima notifikasi pesanan rapi di WhatsApp.',
+                  title: 'Toko Berjualan Otonom 24/7',
+                  desc: 'Pasang tautan di bio medsos. Asisten AI melayani pertanyaan, merangkum order, dan memvalidasi transfer secara mandiri.',
                 },
               ].map((step, idx) => (
                 <div key={step.num} className="relative flex flex-col">
@@ -524,7 +594,7 @@ export function LandingPage() {
               Pertanyaan yang Sering Diajukan
             </h2>
             <p className="text-sm text-[#5c5850] mt-2">
-              Informasi lengkap seputar cara kerja, privasi transaksi, dan pengaturan toko.
+              Informasi lengkap seputar sistem asisten otonom, privasi transaksi, dan pengaturan toko.
             </p>
           </div>
 
@@ -574,10 +644,10 @@ export function LandingPage() {
         <div className="cta-banner-content p-8 sm:p-14 rounded-3xl bg-[#141413] text-white border border-neutral-800 flex flex-col lg:flex-row lg:items-center justify-between gap-8 shadow-xl">
           <div className="max-w-xl">
             <h2 className="font-sans text-3xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              Mulai buat etalase tokomu hari ini.
+              Miliki etalase pintar dan asisten WhatsApp tokomu hari ini.
             </h2>
             <p className="text-sm text-neutral-300 mt-3 leading-relaxed">
-              Daftar gratis dalam 30 detik. 0% komisi platform. Ubah pengunjung profil media sosialmu menjadi pembeli pasti.
+              Daftar gratis dalam 30 detik. 0% komisi platform. Biarkan tokomu tetap melayani pembeli dan menerima transfer 24 jam nonstop.
             </p>
           </div>
 
@@ -602,7 +672,7 @@ export function LandingPage() {
           <div className="flex items-center gap-2.5">
             <span className="font-sans text-base font-extrabold text-[#141413]">tautan.site</span>
             <span className="text-neutral-300">|</span>
-            <span className="text-xs text-[#706c64]">Link in Bio Interaktif & Toko WhatsApp</span>
+            <span className="text-xs text-[#706c64]">Autonomous AI WhatsApp Commerce & Link-in-Bio</span>
           </div>
 
           <div className="flex items-center gap-5 text-xs font-semibold">
