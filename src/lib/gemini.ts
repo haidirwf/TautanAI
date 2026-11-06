@@ -22,6 +22,7 @@ export interface ProcessWhatsAppMessageInput {
 
 export interface ProcessWhatsAppMessageResult {
   reply: string
+  isDuplicate?: boolean
   orderUpdated?: boolean
   orderCreated?: boolean
   orderCode?: string
@@ -61,35 +62,56 @@ export async function processIncomingWhatsAppMessage(
     return { reply: 'Terima kasih telah menghubungi kami. Pesan Anda telah kami terima dan akan segera dibalas oleh admin.' }
   }
 
-  // 2. Fetch Catalog Products (with ai_context)
-  const { data: rawProducts } = await supabase
-    .from('products')
-    .select('*, variant_groups(*, variant_options(*))')
-    .eq('store_id', store.id)
-    .eq('is_active', true)
-
-  const products: Product[] = (rawProducts as Product[]) || []
-
-  // 3. Fetch Recent Orders for this Buyer
   const cleanPhone = senderPhone.replace(/[^0-9]/g, '')
-  const { data: recentOrders } = await supabase
-    .from('orders')
-    .select('*')
-    .eq('store_id', store.id)
-    .eq('buyer_phone', cleanPhone)
-    .order('created_at', { ascending: false })
-    .limit(3)
 
-  // 4. Fetch Previous Chat History (last 6 messages)
-  const { data: chatHistory } = await supabase
-    .from('ai_chat_sessions')
-    .select('*')
-    .eq('store_id', store.id)
-    .eq('buyer_phone', cleanPhone)
-    .order('created_at', { ascending: false })
-    .limit(6)
+  // 2. Fetch Catalog, Recent Orders, and Previous Chat History in parallel
+  const [productsRes, ordersRes, chatRes] = await Promise.all([
+    supabase
+      .from('products')
+      .select('*, variant_groups(*, variant_options(*))')
+      .eq('store_id', store.id)
+      .eq('is_active', true),
+    supabase
+      .from('orders')
+      .select('*')
+      .eq('store_id', store.id)
+      .eq('buyer_phone', cleanPhone)
+      .order('created_at', { ascending: false })
+      .limit(3),
+    supabase
+      .from('ai_chat_sessions')
+      .select('*')
+      .eq('store_id', store.id)
+      .eq('buyer_phone', cleanPhone)
+      .order('created_at', { ascending: false })
+      .limit(8),
+  ])
 
-  const orderedHistory = (chatHistory || []).reverse()
+  const products: Product[] = (productsRes.data as Product[]) || []
+  const recentOrders: any[] = ordersRes.data || []
+  const rawHistory: any[] = chatRes.data || []
+
+  // Database-level deduplication: If this exact message was already replied to in the last 15 minutes, abort retry
+  if (rawHistory.length > 0 && messageText) {
+    const normalizedIncoming = messageText.trim().toLowerCase()
+    const latestMsg = rawHistory[0]
+    const recentUserMsg = rawHistory.find((m: any) => m.role === 'user')
+    if (recentUserMsg && recentUserMsg.content.trim().toLowerCase() === normalizedIncoming) {
+      const msgTime = new Date(recentUserMsg.created_at).getTime()
+      const diffMs = Date.now() - msgTime
+      if (diffMs < 15 * 60 * 1000 && latestMsg.role === 'model') {
+        return {
+          reply: '',
+          isDuplicate: true,
+          orderUpdated: false,
+          orderCreated: false,
+          fonnteToken: store.fonnte_token,
+        }
+      }
+    }
+  }
+
+  const orderedHistory = rawHistory.slice(0, 6).reverse()
 
   // 5. Initialize Google Gemini AI REST Endpoint
   const geminiApiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || ''
@@ -214,7 +236,7 @@ ATURAN UTAMA ANDA:
         contents,
         systemInstruction: { parts: [{ text: systemInstructionText }] },
         tools,
-        generationConfig: { temperature: 0.4 },
+        generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
       }),
     })
 
@@ -358,7 +380,7 @@ ATURAN UTAMA ANDA:
         body: JSON.stringify({
           contents: secondContents,
           systemInstruction: { parts: [{ text: systemInstructionText }] },
-          generationConfig: { temperature: 0.4 },
+          generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
         }),
       })
 
@@ -394,6 +416,7 @@ ATURAN UTAMA ANDA:
 
   return {
     reply: finalReply,
+    isDuplicate: false,
     orderUpdated,
     orderCreated,
     orderCode: targetOrderCode,

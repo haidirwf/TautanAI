@@ -13,7 +13,7 @@ async function dispatchFonnteMessage(token: string, target: string, message: str
   try {
     const res = await fetch('https://api.fonnte.com/send', {
       method: 'POST',
-      signal: AbortSignal.timeout(12000),
+      signal: AbortSignal.timeout(8000),
       headers: {
         Authorization: token,
         'Content-Type': 'application/json',
@@ -71,35 +71,57 @@ async function processIncomingWhatsAppMessage(input: ProcessWhatsAppInput) {
     return { reply: 'Terima kasih telah menghubungi kami. Pesan Anda telah kami terima dan akan segera dibalas oleh admin.' }
   }
 
-  // Fetch Catalog Products with ai_context
-  const { data: rawProducts } = await supabase
-    .from('products')
-    .select('*, variant_groups(*, variant_options(*))')
-    .eq('store_id', store.id)
-    .eq('is_active', true)
-
-  const products: any[] = rawProducts || []
-
-  // Fetch Recent Orders for Buyer
   const cleanPhone = senderPhone.replace(/[^0-9]/g, '')
-  const { data: recentOrders } = await supabase
-    .from('orders')
-    .select('*')
-    .eq('store_id', store.id)
-    .eq('buyer_phone', cleanPhone)
-    .order('created_at', { ascending: false })
-    .limit(3)
 
-  // Fetch Previous Chat History
-  const { data: chatHistory } = await supabase
-    .from('ai_chat_sessions')
-    .select('*')
-    .eq('store_id', store.id)
-    .eq('buyer_phone', cleanPhone)
-    .order('created_at', { ascending: false })
-    .limit(6)
+  // Parallel fetch for catalog, buyer orders, and recent chat history
+  const [productsRes, ordersRes, chatRes] = await Promise.all([
+    supabase
+      .from('products')
+      .select('*, variant_groups(*, variant_options(*))')
+      .eq('store_id', store.id)
+      .eq('is_active', true),
+    supabase
+      .from('orders')
+      .select('*')
+      .eq('store_id', store.id)
+      .eq('buyer_phone', cleanPhone)
+      .order('created_at', { ascending: false })
+      .limit(3),
+    supabase
+      .from('ai_chat_sessions')
+      .select('*')
+      .eq('store_id', store.id)
+      .eq('buyer_phone', cleanPhone)
+      .order('created_at', { ascending: false })
+      .limit(8),
+  ])
 
-  const orderedHistory = (chatHistory || []).reverse()
+  const products: any[] = productsRes.data || []
+  const recentOrders: any[] = ordersRes.data || []
+  const rawHistory: any[] = chatRes.data || []
+
+  // Database-level deduplication: If this exact message was already received and replied to within the last 15 minutes, abort retry
+  if (rawHistory.length > 0 && messageText) {
+    const normalizedIncoming = messageText.trim().toLowerCase()
+    const latestMsg = rawHistory[0]
+    const recentUserMsg = rawHistory.find((m: any) => m.role === 'user')
+    if (recentUserMsg && recentUserMsg.content.trim().toLowerCase() === normalizedIncoming) {
+      const msgTime = new Date(recentUserMsg.created_at).getTime()
+      const diffMs = Date.now() - msgTime
+      // If received within last 15 minutes and the model already replied, ignore duplicate webhook retry
+      if (diffMs < 15 * 60 * 1000 && latestMsg.role === 'model') {
+        return {
+          reply: '',
+          isDuplicate: true,
+          orderUpdated: false,
+          orderCreated: false,
+          fonnteToken: store.fonnte_token,
+        }
+      }
+    }
+  }
+
+  const orderedHistory = rawHistory.slice(0, 6).reverse()
 
   // Gemini REST Endpoint with Intelligent Model Selection & Fallback
   const geminiApiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || ''
@@ -208,7 +230,7 @@ ATURAN UTAMA ANDA:
         contents,
         systemInstruction: { parts: [{ text: systemInstructionText }] },
         tools,
-        generationConfig: { temperature: 0.3, maxOutputTokens: 350 },
+        generationConfig: { temperature: 0.3, maxOutputTokens: 1024 },
       }),
     })
 
@@ -223,7 +245,7 @@ ATURAN UTAMA ANDA:
           contents,
           systemInstruction: { parts: [{ text: systemInstructionText }] },
           tools,
-          generationConfig: { temperature: 0.3, maxOutputTokens: 350 },
+          generationConfig: { temperature: 0.3, maxOutputTokens: 1024 },
         }),
       })
       firstData = await retryRes.json()
@@ -357,7 +379,7 @@ ATURAN UTAMA ANDA:
           body: JSON.stringify({
             contents: secondContents,
             systemInstruction: { parts: [{ text: systemInstructionText }] },
-            generationConfig: { temperature: 0.4 },
+            generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
           }),
         })
 
@@ -409,6 +431,7 @@ ATURAN UTAMA ANDA:
 
   return {
     reply: finalReply,
+    isDuplicate: false,
     orderUpdated,
     orderCreated,
     orderCode: targetOrderCode,
@@ -416,37 +439,56 @@ ATURAN UTAMA ANDA:
   }
 }
 
-// In-memory deduplication cache to prevent Fonnte duplicate webhook retries
+// In-memory sliding cache for duplicate detection (15 minutes TTL, max 1000 entries)
 const processedMessagesCache = new Map<string, number>()
+const CACHE_TTL_MS = 15 * 60 * 1000 // 15 minutes
 
 function isDuplicateRequest(body: any): boolean {
   const now = Date.now()
   for (const [key, timestamp] of processedMessagesCache.entries()) {
-    if (now - timestamp > 30000) {
+    if (now - timestamp > CACHE_TTL_MS) {
       processedMessagesCache.delete(key)
     }
   }
 
+  if (processedMessagesCache.size > 1000) {
+    const firstKey = processedMessagesCache.keys().next().value
+    if (firstKey) processedMessagesCache.delete(firstKey)
+  }
+
   const uniqueId = body.inboxid || body.id
   if (uniqueId) {
-    if (processedMessagesCache.has(`id:${uniqueId}`)) {
+    const key = `id:${uniqueId}`
+    if (processedMessagesCache.has(key)) {
       return true
     }
-    processedMessagesCache.set(`id:${uniqueId}`, now)
+    processedMessagesCache.set(key, now)
     return false
   }
 
-  const sender = String(body.sender || body.from || body.phone || '')
-  const message = String(body.message || body.text || '')
-  const cacheKey = `msg:${sender}:${message.trim()}`
-  if (processedMessagesCache.has(cacheKey)) {
-    const lastSeen = processedMessagesCache.get(cacheKey) || 0
-    if (now - lastSeen < 3000) {
+  const sender = String(body.sender || body.from || body.phone || '').trim()
+  const message = String(body.message || body.text || '').trim().toLowerCase()
+  const timestamp = String(body.timestamp || '')
+
+  if (sender && timestamp) {
+    const tsKey = `ts:${sender}:${timestamp}`
+    if (processedMessagesCache.has(tsKey)) {
       return true
     }
+    processedMessagesCache.set(tsKey, now)
   }
 
-  processedMessagesCache.set(cacheKey, now)
+  if (sender && message) {
+    const msgKey = `msg:${sender}:${message}`
+    if (processedMessagesCache.has(msgKey)) {
+      const lastSeen = processedMessagesCache.get(msgKey) || 0
+      if (now - lastSeen < CACHE_TTL_MS) {
+        return true
+      }
+    }
+    processedMessagesCache.set(msgKey, now)
+  }
+
   return false
 }
 
@@ -473,7 +515,7 @@ export default async function handler(req: any, res: any) {
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
+    return res.status(200).json({ status: 'ignored_method' })
   }
 
   try {
@@ -486,16 +528,30 @@ export default async function handler(req: any, res: any) {
     const url = body.url || body.file || undefined
     const device = String(body.device || body.token || '').trim()
 
+    // 1. Guard: Non-message events (status updates, connection receipts, etc.)
+    // MUST return 200 OK so Fonnte acknowledges and does not trigger retries
     if (!sender) {
-      return res.status(400).json({ error: 'Sender phone number is required' })
+      return res.status(200).json({ status: 'ignored_no_sender' })
     }
 
-    // Deduplication gate: If Fonnte retries the exact same message within 4 seconds, exit immediately
+    // 2. Guard: Prevent bot from echoing or responding to its own device messages
+    const cleanSender = sender.replace(/[^0-9]/g, '')
+    const cleanDevice = device.replace(/[^0-9]/g, '')
+    if (cleanDevice && cleanSender === cleanDevice) {
+      return res.status(200).json({ status: 'ignored_device_echo' })
+    }
+
+    // 3. Guard: Empty message without attachments
+    if (!message && !url) {
+      return res.status(200).json({ status: 'ignored_empty_message' })
+    }
+
+    // 4. In-memory Deduplication gate
     if (isDuplicateRequest(body)) {
       return res.status(200).json({ status: 'ignored_duplicate_webhook' })
     }
 
-    // Process incoming message with Gemini AI Engine
+    // 5. Process incoming message with Gemini AI Engine (includes DB-level deduplication)
     const result = await processIncomingWhatsAppMessage({
       senderPhone: sender,
       messageText: message,
@@ -504,7 +560,11 @@ export default async function handler(req: any, res: any) {
       storeWhatsappOrDevice: device,
     })
 
-    // Fonnte official protocol: Dispatch reply to https://api.fonnte.com/send
+    if (result.isDuplicate) {
+      return res.status(200).json({ status: 'ignored_duplicate_retry' })
+    }
+
+    // 6. Fonnte official protocol: Dispatch reply to https://api.fonnte.com/send
     const activeFonnteToken = result.fonnteToken || process.env.FONNTE_TOKEN || 'SFjQ1582ANj1k7JvUEtV'
     if (activeFonnteToken && result.reply) {
       await dispatchFonnteMessage(activeFonnteToken, sender, result.reply)
@@ -518,9 +578,10 @@ export default async function handler(req: any, res: any) {
     })
   } catch (error: any) {
     console.error('Error handling WhatsApp webhook:', error)
-    return res.status(500).json({
-      error: 'Internal server error processing webhook',
-      reply: 'Halo kak, sistem kami sedang mengalami kendala teknis sementara.',
+    // Always return HTTP 200 so Fonnte acknowledges delivery and does not spam 15 retries
+    return res.status(200).json({
+      status: false,
+      error: 'Error processing webhook',
     })
   }
 }
