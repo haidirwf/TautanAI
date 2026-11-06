@@ -166,7 +166,9 @@ ATURAN UTAMA ANDA:
 2. Jika pembeli ingin memesan barang, rekap nama barang, jumlah, dan alamat pengiriman, lalu gunakan tool "create_order_draft" untuk membuat pesanan di sistem.
 3. Berikan instruksi transfer/QRIS sesuai rekening toko saat pesanan dibuat.
 4. SANGAT PENTING - MENGUBAH STATUS PESANAN (PAID / LUNAS / BATAL):
-   - Jika pembeli mengirim bukti transfer, foto struk, atau menyatakan sudah bayar/transfer, Anda WAJIB MEMANGGIL tool "confirm_buyer_payment" (atau "update_order_status" dengan status "PAID") agar status di sistem toko dan dashboard penjual otomatis berubah menjadi PAID.
+   - Jika pembeli mengirim bukti transfer, foto struk, atau menyatakan sudah bayar/transfer:
+     Periksa bukti transfer dengan seksama. Ekstrak nama pengirim/pemilik rekening, nomor rekening/e-wallet jika ada, serta bank/e-wallet pengirim.
+     Anda WAJIB MEMANGGIL tool "confirm_buyer_payment" dengan menyertakan sender_name, sender_account, dan payment_method hasil pembacaan bukti transfer agar tercatat ke database dan status pesanan otomatis berubah menjadi PAID.
    - Jika pembeli membatalkan pesanan, panggil tool "update_order_status" dengan status "CANCELLED".
    - Jika pembeli tidak menyebutkan kode pesanan, gunakan kode pesanan pending yang tercatat di riwayat "PESANAN TERAKHIR DARI NOMOR INI" di atas.
    - JANGAN PERNAH menyatakan pesanan sudah Lunas (PAID) dalam teks balasan tanpa berhasil mengeksekusi tool database terlebih dahulu!
@@ -213,12 +215,15 @@ ATURAN UTAMA ANDA:
         },
         {
           name: 'confirm_buyer_payment',
-          description: 'Mengubah status pesanan menjadi PAID (Lunas) di database saat pembeli mengirim bukti transfer atau konfirmasi lunas.',
+          description: 'Mengubah status pesanan menjadi PAID (Lunas) di database saat pembeli mengirim bukti transfer atau konfirmasi lunas, dan mengekstrak rincian pembayaran dari bukti transfer.',
           parameters: {
             type: 'OBJECT',
             properties: {
               order_code: { type: 'STRING', description: 'Kode pesanan pembeli (misal: ORD-...). Boleh kosong jika merujuk pesanan terakhir.' },
-              payment_notes: { type: 'STRING', description: 'Catatan bukti pembayaran / bank pengirim' },
+              payment_notes: { type: 'STRING', description: 'Catatan bukti pembayaran / nominal transfer' },
+              sender_name: { type: 'STRING', description: 'Nama pengirim / pemilik rekening yang tertera di bukti transfer' },
+              sender_account: { type: 'STRING', description: 'Nomor rekening atau nomor e-wallet pembeli yang tertera di bukti transfer' },
+              payment_method: { type: 'STRING', description: 'Nama bank atau e-wallet (misal: BCA, Mandiri, BRI, BNI, DANA, GoPay, OVO)' },
             },
           },
         },
@@ -431,6 +436,13 @@ ATURAN UTAMA ANDA:
           if (!rpcErr && rpcRes && rpcRes.success) {
             updatedSuccess = true
             updatedOrderCode = rpcRes.order_code || updatedOrderCode
+            if (fnArgs.sender_name || fnArgs.sender_account || fnArgs.payment_method) {
+              const extraUpdates: any = {}
+              if (fnArgs.sender_name) extraUpdates.payment_sender_name = String(fnArgs.sender_name).trim()
+              if (fnArgs.sender_account) extraUpdates.payment_sender_account = String(fnArgs.sender_account).trim()
+              if (fnArgs.payment_method) extraUpdates.payment_method = String(fnArgs.payment_method).trim()
+              await supabase.from('orders').update(extraUpdates).ilike('order_code', `%${updatedOrderCode}%`)
+            }
           } else if (rpcErr) {
             console.warn('RPC update_order_status_by_ai notice:', rpcErr.message)
           }
@@ -497,6 +509,15 @@ ATURAN UTAMA ANDA:
               }
               if (targetStatus === 'PAID') {
                 patchData.paid_at = new Date().toISOString()
+              }
+              if (fnArgs.sender_name) {
+                patchData.payment_sender_name = String(fnArgs.sender_name).trim()
+              }
+              if (fnArgs.sender_account) {
+                patchData.payment_sender_account = String(fnArgs.sender_account).trim()
+              }
+              if (fnArgs.payment_method) {
+                patchData.payment_method = String(fnArgs.payment_method).trim()
               }
 
               const { data: directUpdated, error: directErr } = await supabase

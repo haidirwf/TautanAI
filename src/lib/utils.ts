@@ -81,12 +81,12 @@ export function buildWhatsAppOrderMessage(
     `*Subtotal:* ${formatIDR(order.subtotal)}`,
   ]
 
-  if (order.payment_method || order.payment_sender_name || order.payment_sender_account) {
+  if (order.payment_sender_name || order.payment_sender_account) {
     lines.push(``)
-    lines.push(`*Data Pembayaran Pengirim:*`)
-    if (order.payment_method) lines.push(`- Bank / E-Wallet: ${order.payment_method}`)
-    if (order.payment_sender_name) lines.push(`- Atas Nama Pengirim: ${order.payment_sender_name}`)
-    if (order.payment_sender_account) lines.push(`- No. Rekening / No. HP: ${order.payment_sender_account}`)
+    lines.push(`*Data Pembayaran Pembeli:*`)
+    if (order.payment_method) lines.push(`- Bank atau E-Wallet: ${order.payment_method}`)
+    if (order.payment_sender_name) lines.push(`- Atas Nama: ${order.payment_sender_name}`)
+    if (order.payment_sender_account) lines.push(`- No. Rekening atau No. HP: ${order.payment_sender_account}`)
   }
 
   if (order.order_notes?.trim()) {
