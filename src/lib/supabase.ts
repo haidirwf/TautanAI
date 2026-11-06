@@ -707,16 +707,9 @@ export const api = {
         }),
       })
       if (res.ok) {
-        const data = await res.json()
+        const data = await res.json().catch(() => null)
         if (data && data.success) return data
       }
-      const text = await res.text()
-      try {
-        const json = JSON.parse(text)
-        if (json?.error && res.status !== 404) {
-          return { success: false, message: json.error }
-        }
-      } catch {}
     } catch (e: any) {
       console.warn('/api/notify fetch error, executing direct browser fallback:', e)
     }
@@ -755,7 +748,20 @@ export const api = {
         store = data
       }
 
-      const fonnteToken = store?.fonnte_token || (import.meta as any).env?.VITE_FONNTE_TOKEN || ''
+      let fonnteToken = store?.fonnte_token || ''
+      if (!fonnteToken) {
+        try {
+          const authRaw = localStorage.getItem('auth-storage')
+          if (authRaw) {
+            const parsed = JSON.parse(authRaw)
+            fonnteToken = parsed?.state?.user?.fonnteToken || ''
+          }
+        } catch {}
+      }
+      if (!fonnteToken) {
+        fonnteToken = (import.meta as any).env?.VITE_FONNTE_TOKEN || (import.meta as any).env?.FONNTE_TOKEN || ''
+      }
+
       if (!fonnteToken) {
         return {
           success: false,
