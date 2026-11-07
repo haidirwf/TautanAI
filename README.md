@@ -3,10 +3,11 @@
 
   # tautanAI
   **Autonomous AI-Powered WhatsApp Commerce & Micro-Catalogue Storefront for Indonesian SMBs**
+  *From Idea to Impact: Creating Intelligent Web Solutions for a Smarter Bali*
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](package.json)
+[![Bali DigiFest 2026](https://img.shields.io/badge/Bali_DigiFest_2026-AI_Web_Innovation_Challenge-FF6B35?style=flat&logo=target)](https://github.com/haidirwf/TautanAI)
+[![Version](https://img.shields.io/badge/version-v1.0--submission-blue.svg)](package.json)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![React 19](https://img.shields.io/badge/React-19.0-61DAFB?style=flat&logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6.1-646CFF?style=flat&logo=vite)](https://vitejs.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat&logo=typescript)](https://www.typescriptlang.org/)
@@ -18,294 +19,221 @@
 
 <br />
 
-**tautanAI** is a modern, open-source multi-tenant platform designed for Indonesian small-and-medium businesses (SMBs), independent online sellers, and creator-merchants. It unites a social link-in-bio profile with an interactive micro-catalogue storefront, direct WhatsApp checkout with **0% transaction fees**, a professional fintech-grade merchant dashboard, and an **Autonomous 24/7 WhatsApp AI Agent Copilot** powered by **Google Gemini** and **Fonnte** to automatically answer buyer inquiries, draft orders, and verify bank transfer payments in real time.
+---
+
+## Description
+
+**tautanAI** adalah platform *link-in-bio micro-commerce* multi-tenant modern yang dirancang khusus untuk memberdayakan pelaku UMKM, pedagang mandiri, dan wirausaha lokal (khususnya sentra kriya, kuliner, dan ekonomi kreatif di Bali). Platform ini menggabungkan profil media sosial interaktif, etalase mikro instan (*micro-catalogue*) dengan **0% biaya transaksi platform**, dashboard finansial merchant berstandar fintech, serta **Autonomous WhatsApp AI Copilot (24/7)** bertenaga **Google Gemini** dan **Fonnte** untuk melayani tanya-jawab stok, menyusun draf pesanan, memverifikasi foto bukti transfer via *Multimodal Vision OCR*, hingga menghimpun rating kepuasan pelanggan secara otomatis.
 
 ---
 
-## Table of Contents
+## Problem & Target User
 
-- [Key Features](#-key-features)
-- [Autonomous WhatsApp AI Copilot](#-autonomous-whatsapp-ai-copilot)
-- [Architecture & Technology Stack](#-architecture--technology-stack)
-- [System Requirements](#-system-requirements)
-- [Local Installation & Setup](#-local-installation--setup)
-- [Project Directory Structure](#-project-directory-structure)
-- [Security Hardening & Resilience](#-security-hardening--resilience)
-- [Deployment Guide](#-deployment-guide)
-- [Contributing](#-contributing)
-- [License](#-license)
+### Problem & Background
+Bagi pelaku UMKM di Indonesia, khususnya di Bali, WhatsApp merupakan kanal penjualan paling alami dengan tingkat konversi tertinggi. Namun, tingginya interaksi ini membawa tiga permasalahan struktural:
+1. **Kehilangan Pembeli Akibat Respons Lambat (*Drop-off Rate*):** Penjual (kedai kopi, pengrajin perak Celuk, butik tenun Endek, toko oleh-oleh) sering sibuk melayani pembeli fisik atau toko tutup di malam hari. Pesan WhatsApp yang tidak segera dibalas membuat calon pembeli kabur ke kompetitor.
+2. **Beban Administrasi Manual yang Melelahkan:** Waktu berjam-jam per hari terbuang hanya untuk menjawab pertanyaan varian yang sama, menghitung total belanja, menyalin alamat kirim satu per satu, dan mencocokkan mutasi bank secara manual saat pembeli mengirim foto struk transfer.
+3. **Komisi Marketplace Menggerus Margin:** Marketplace konvensional mengenakan potongan biaya layanan (*take rate*) sekitar 8%–15% per transaksi, sementara membangun website e-commerce mandiri membutuhkan biaya dan keahlian teknis yang sulit dijangkau pedagang kecil.
+
+### Target User
+- **Pemilik UMKM & Pedagang Mandiri:** Sentra kriya (perak Celuk, ukiran kayu Ubud), fesyen etnik (tenun Endek, batik lokal), kedai kuliner/F&B, dan toko oleh-oleh khas Bali yang tidak memiliki admin khusus 24 jam.
+- **Kreator Konten & Social Seller:** Wirausahawan independen yang mengandalkan promosi visual di Instagram/TikTok dan membutuhkan katalog belanja instan via tautan bio tanpa komisi potongan pihak ketiga.
 
 ---
 
 ## Key Features
 
-- **Instant Storefront & Onboarding (`/:slug`):** Launch a personalized, high-conversion storefront in seconds with custom brand avatar, bio, and social links.
-- **Autonomous WhatsApp AI Sales Agent:** 24/7 AI Copilot powered by Google Gemini (`gemini-3.1-flash-lite`, `gemini-3.8-flash`, `gemini-flash-latest`) handles buyer chat conversations, checks catalog inventory, recommends products, creates order drafts, and verifies payment receipts directly inside WhatsApp.
-- **Direct WhatsApp Checkout (0% Fees):** No third-party payment gateway cuts. The frictionless shopping cart formats orders into clean, ready-to-send WhatsApp messages directly to the seller's active WhatsApp number.
-- **Automated Multimodal Vision OCR & Payment Verification:** Buyers can upload transfer receipt screenshots via WhatsApp. The AI uses Gemini Multimodal Vision to extract the sender's bank/e-wallet, account number, name, and amount, tags seller notes, and flips the order status from `PENDING_WA` to `PAID` instantly.
-- **Automated WhatsApp CS Rating & Review Engine:** Once an order is verified as PAID, the AI autonomously requests customer feedback (1–5 stars) in WhatsApp and stores reviews directly into the store database via function calling.
-- **Fluid Multi-Step Cart & Morphing Drawer:** Interactive shopping cart with smooth spring physics when advancing from product selection to delivery information and confirmation.
-- **Fintech-Style Financial Dashboard (`/dashboard`):** Real-time tracking of settled gross revenue, pending WhatsApp pipeline, average order value (AOV), and conversion rates with interactive revenue trajectory charts.
-- **Comprehensive Order Lifecycle Control (`/orders`):** Full visibility into orders with AI management tags (`managed_by_ai`), payment proof inspection, tracking number inputs, and 1-tap WhatsApp buyer actions.
-- **Product & Variant Inventory Management (`/katalog`):** Complete catalog CRUD supporting categories, stock counters, variant groups (e.g. Size, Color), price deltas, and custom **AI Context Notes** for guiding the AI agent.
-- **Customer CRM & Insights (`/pelanggan`):** Automatically aggregates customer records, order counts, lifetime spending (LTV), and last order dates with instant WhatsApp contact actions.
-- **Buyer Reviews & Social Proof (`/ulasan`):** Integrated post-checkout buyer rating and review collection system displayed within the merchant dashboard.
-- **Sales & Financial Reports (`/laporan`):** In-depth breakdown of verified revenue, WhatsApp conversion pipelines, and payment settlement records.
-- **cPanel, Vercel & Static Hosting Ready:** Ultra-lightweight static frontend bundle paired with edge/serverless webhook endpoints for WhatsApp automation.
+- **Etalase Mikro Instan (`/:slug`):** Halaman toko publik *mobile-first* berkecepatan tinggi dengan identitas merek, tautan sosial, filter kategori, pemilihan varian bertingkat (ukuran, warna, penyesuaian harga), dan drawer keranjang interaktif.
+- **Direct WhatsApp Checkout (0% Fee):** Konversi keranjang belanja menjadi format pesan WhatsApp terstruktur ke nomor penjual tanpa potongan biaya komisi per transaksi (seluruh pembayaran 100% langsung ke rekening/QRIS penjual).
+- **Autonomous WhatsApp AI Sales Agent:** Asisten AI 24/7 bertenaga Google Gemini (`gemini-3.1-flash-lite`, `gemini-3.8-flash`) yang mampu menjawab pertanyaan katalog, mengecek inventaris stok, merekomendasikan produk, dan menerbitkan draf pesanan resmi (`create_order_draft`) ke database.
+- **Multimodal Vision OCR Bukti Transfer:** Pembeli cukup mengirim foto/tangkapan layar struk transfer bank atau QRIS di WhatsApp. AI Vision mengekstrak nama bank, nama pengirim, nomor rekening, dan nominal transfer, lalu otomatis mengubah status pesanan menjadi `PAID` (Lunas).
+- **Pengumpul Ulasan Otomatis (*Post-Payment CS*):** Setelah pembayaran terverifikasi, AI secara otomatis menanyakan kepuasan pembeli (1–5 bintang) di chat WhatsApp dan mencatat ulasannya langsung ke database toko via *function calling*.
+- **Smart Multi-Store Routing (1 Nomor WA untuk Banyak Toko):** Algoritma pintar pendeteksi toko berdasarkan kode draf pesanan (`#ORD-...`), nama produk, riwayat transaksi pembeli, atau direktori pilihan otomatis saat chat ambigu.
+- **Fintech Merchant Dashboard (`/dashboard`):** Pelacakan omzet riil (*settled gross revenue*), antrean transaksi (*pending pipeline*), *Average Order Value (AOV)*, *conversion rate*, serta grafik visual trajectory tren harian/mingguan/bulanan.
+- **Manajemen Siklus Pesanan (`/dashboard/orders`):** Kontrol siklus transaksi (`PENDING_WA`, `PAID`, `PROCESSING`, `SHIPPED`, `COMPLETED`), input nomor resi pelacakan kurir, serta inspeksi rincian bukti transfer pembeli.
+- **Katalog dengan AI Context Notes (`/dashboard/catalog`):** Manajemen produk dan inventaris dengan kolom instruksi khusus untuk membekali AI pemahaman mendalam tentang produk (bahan, panduan ukuran, keunikan kriya lokal).
+- **Kustomisasi Profil & Persona AI (`/dashboard/settings`):** Penyesuaian nama toko, nomor WhatsApp, nomor rekening tujuan, gaya persona bahasa AI (keramahan lokal Bali, kasual, atau formal), dan pemilihan model Gemini.
 
 ---
 
-## Autonomous WhatsApp AI Copilot
+## Tech Stack
 
-The platform features an autonomous AI commerce copilot located at `api/whatsapp.ts` that connects the merchant's store directly to WhatsApp via the [Fonnte](https://fonnte.com) gateway:
+- **Frontend Core:** [React 19](https://react.dev/) + [Vite 6](https://vitejs.dev/) Single Page Application (SPA).
+- **Bahasa & Type Safety:** [TypeScript 5.7](https://www.typescriptlang.org/) dengan *strict mode* untuk keandalan kontrak antarmuka data.
+- **AI Engine:** [Google Gemini API](https://ai.google.dev/) (`gemini-3.1-flash-lite` default, `gemini-3.8-flash`, `gemini-flash-latest`) dengan *REST v1beta*, *Autonomous Function Calling*, dan *Multimodal Vision OCR*.
+- **WhatsApp Gateway:** [Fonnte API](https://fonnte.com/) untuk *inbound webhook reception* dan *outbound automated message dispatch*.
+- **Styling & Design System:** [Tailwind CSS v3.4](https://tailwindcss.com/) dengan palet *warm cream canvas*, hierarki tipografi editorial, dan rasio kontras visual tinggi.
+- **State Management:** [Zustand](https://github.com/pmndrs/zustand) dengan persistensi local storage untuk keranjang belanja dan sesi autentikasi.
+- **Animasi & Physics:** [Motion](https://motion.dev/) (Framer Motion v13) dan [GSAP 3](https://gsap.com/) ScrollTrigger untuk transisi halaman dan drawer belanja dinamis.
+- **Backend & Database:** [Supabase](https://supabase.com/) (PostgreSQL 15, Supabase Auth dengan Google OAuth & Email/Password, Storage bucket, dan Row Level Security).
+- **Serverless Automation:** Vercel Serverless Functions (`api/whatsapp.ts`) untuk pemrosesan webhook WhatsApp secara asinkron.
+- **Hosting & Deployment:** [Vercel](https://vercel.com/) (Frontend & Serverless Functions) serta kompatibel dengan shared hosting cPanel Apache via `public/.htaccess`.
 
-### How It Works
+---
+
+## AI Implementation
+
+Implementasi kecerdasan buatan pada tautanAI berfokus pada **solusi nyata dan dampak terukur** (*material integration*):
+
+- **Model AI:** Google Gemini `gemini-3.1-flash-lite` (default produksi) melalui Generative Language REST API v1beta. Dipilih karena latensi rendah (<1.5 detik), efisiensi komputasi, dan kemampuan pemahaman instruksi bahasa Indonesia yang sangat alami.
+- **Autonomous Function Calling Loop:** AI secara otonom memanggil tool eksekusi database Supabase:
+  - `check_stock`: Memeriksa stok varian barang secara langsung.
+  - `create_order_draft`: Menerbitkan nota pesanan resmi baru ke database (`PENDING_WA`).
+  - `confirm_buyer_payment`: Memverifikasi struk transfer via Vision OCR dan mengubah status menjadi `PAID`.
+  - `update_order_status`: Memperbarui status pesanan (misal pembatalan atau perubahan alur).
+  - `submit_customer_review`: Menyimpan rating kepuasan (1–5 bintang) dan ulasan pembeli ke database.
+- **Multimodal Vision OCR:** File gambar struk transfer (Base64) dianalisis langsung oleh Gemini tanpa API OCR pihak ketiga berbayar tambahan. Sistem mengekstrak nama bank/e-wallet, nomor rekening, nama pengirim, dan nominal transfer secara otomatis.
+- **Domain Knowledge Injection (AI Context Notes):** Setiap produk dapat memiliki catatan khusus yang diinjeksi ke dalam prompt sistem AI, sehingga AI mampu menjelaskan filosofi kain tenun, bahan kriya perak, atau resep kuliner khas Bali dengan akurasi tinggi layaknya karyawan berpengalaman.
+
+---
+
+## Architecture / Data Flow
 
 ```text
-[ Buyer on WhatsApp ]
+[ Pembeli di WhatsApp ]
        │
-       ▼ (Sends text or payment proof photo)
-[ Fonnte Gateway ]
+       ▼ (Kirim pesan teks atau foto struk transfer)
+[ Fonnte WhatsApp Gateway ]
        │
        ▼ HTTP POST Webhook
 [ /api/whatsapp (Vercel Serverless) ]
        │
-       ├── 1. In-Memory & Database Deduplication Guard (Prevents retry loops)
-       ├── 2. Parallel Context Retrieval (Store, Active Products, Orders, Chat History)
-       ├── 3. Google Gemini REST API (with Autonomous Function Calling)
-       │       ├── Models: gemini-3.1-flash-lite (Default), gemini-3.8-flash, gemini-flash-latest
-       │       ├── Tool: check_stock (Verify inventory & variants)
-       │       ├── Tool: create_order_draft (Drafts new order into Supabase)
-       │       ├── Tool: confirm_buyer_payment (Multimodal Vision OCR extracts bank/sender info -> Sets PAID)
-       │       ├── Tool: update_order_status (Real-time order transitions)
-       │       └── Tool: submit_customer_review (Collects 1-5 star ratings directly in WhatsApp)
-       ├── 4. Log Session to PostgreSQL (ai_chat_sessions)
+       ├── 1. Dual-Layer Deduplication Guard (Cache Memori 15 Menit + Database Log)
+       ├── 2. Smart Multi-Store Routing (Deteksi Toko via Order Code / Context)
+       ├── 3. Context Retrieval (Data Toko, Katalog Aktif, Riwayat Chat, & Order Pending)
+       ├── 4. Google Gemini REST API (v1beta)
+       │       ├── Multimodal Vision OCR (Menganalisis Struk Bukti Bayar)
+       │       └── Autonomous Function Calling:
+       │             ├── create_order_draft  ──► [ Supabase PostgreSQL (orders) ]
+       │             ├── confirm_buyer_payment ─► [ Supabase PostgreSQL (status: PAID) ]
+       │             └── submit_customer_review ─► [ Supabase PostgreSQL (reviews) ]
+       ├── 5. Pencatatan Sesi Percakapan (ai_chat_sessions)
        │
-       ▼ Outbound Reply via https://api.fonnte.com/send
-[ Buyer Receives Immediate WhatsApp Response ]
+       ▼ Kirim Balasan via https://api.fonnte.com/send
+[ Pembeli Menerima Balasan Instan di WhatsApp ]
+       │
+       ▼ Sinkronisasi Real-Time
+[ Dashboard Finansial Merchant (/dashboard) ] (Omzet Terverifikasi & Status Pesanan)
 ```
 
-### Configurable AI Store Settings (`/settings`)
-Merchants have full autonomous control over their AI Copilot:
-- **Toggle AI Copilot:** Turn autonomous WhatsApp customer assistance on/off with one switch.
-- **Fonnte Device Token:** Connect any WhatsApp number via QR scan at fonnte.com.
-- **Brand Persona & Tone:** Define how the AI greets and talks with buyers (e.g., warm Balinese hospitality, formal boutique, or casual streetwear).
-- **Custom Operational Instructions:** Provide specific store rules, promo codes, delivery policies, or FAQs.
-- **Payment & Bank Instructions:** Set BCA, Mandiri, BRI, or QRIS instructions dispatched automatically when orders are finalized.
-- **Model Selection:** Choose between `gemini-3.1-flash-lite` (Recommended - Ultra-fast & Stable), `gemini-3.8-flash` (Flagship Reasoning Model), or `gemini-flash-latest` (Auto-updating Latest Model).
-- **Product AI Context:** Add custom selling notes to individual catalog items that the AI references during customer questions.
-
 ---
 
-## Architecture & Technology Stack
+## Installation / Run Instructions
 
-**tautanAI** is built for maximum speed, responsiveness, and zero-maintenance reliability:
-
-- **Frontend Core:** [React 19](https://react.dev/) + [Vite 6](https://vitejs.dev/) Single Page Application (SPA).
-- **Type Safety:** [TypeScript 5.7](https://www.typescriptlang.org/) for robust end-to-end interface contracts.
-- **AI Engine:** [Google Gemini API](https://ai.google.dev/) (`gemini-3.1-flash-lite` default, with `gemini-3.8-flash` & `gemini-flash-latest` support) with multimodal vision OCR, function calling tools, and conversation history memory.
-- **WhatsApp Gateway:** [Fonnte API](https://fonnte.com/) for bidirectional message dispatch and media webhook reception.
-- **Styling & Design System:** [Tailwind CSS v3.4](https://tailwindcss.com/) with an editorial warm cream canvas palette, serif typography hierarchy, and accessible contrast ratios.
-- **State Management:** [Zustand](https://github.com/pmndrs/zustand) with persistent local storage hydration for cart and authentication sessions.
-- **Micro-Animations & Physics:** [Motion](https://motion.dev/) (Framer Motion v13) for fluid spring physics, dynamic modal height transitions, and interactive UI feedback.
-- **Routing:** [React Router v7](https://reactrouter.com/) for fast client-side navigation.
-- **Backend & Database:** [Supabase](https://supabase.com/) (PostgreSQL 15, Supabase Auth with automated JWT refresh, and Row Level Security).
-- **Serverless Automation:** Vercel Serverless Functions (`api/whatsapp.ts`) for processing asynchronous WhatsApp webhooks.
-
----
-
-## System Requirements
-
-Before running the project locally, ensure you have:
-
-- [Node.js](https://nodejs.org/) v18.0.0 or higher (or [Bun](https://bun.sh/) / [pnpm](https://pnpm.io/))
-- npm v9+ or equivalent package manager
-- A [Supabase](https://supabase.com/) project (free tier is fully sufficient)
-- A [Google AI Studio Gemini API Key](https://aistudio.google.com/) (for AI Copilot features)
-- A [Fonnte](https://fonnte.com/) account and device token (optional for WhatsApp testing)
-
----
-
-## Local Installation & Setup
-
-### 1. Clone the Repository
-
+### 1. Clone Repositori
 ```bash
-git clone https://github.com/haidirwf/tautantoko.git tautan-ai
-cd tautan-ai
+git clone https://github.com/haidirwf/TautanAI.git
+cd TautanAI
 ```
 
-### 2. Install Dependencies
-
+### 2. Pasang Dependensi
 ```bash
 npm install
 ```
 
-### 3. Configure Environment Variables
-
-Duplicate the template environment file:
-
+### 3. Konfigurasi Environment Variables
+Salin berkas template environment:
 ```bash
 cp .env.example .env
 ```
-
-Open `.env` and fill in your credentials:
-
+Isi variabel yang dibutuhkan pada berkas `.env`:
 ```env
-# Supabase Configuration
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
+# Supabase Database & Auth
+VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key # Opsional untuk webhook admin bypass
 
-# Google Gemini AI Configuration
+# Google Gemini AI
 VITE_GEMINI_API_KEY=your-gemini-api-key
 VITE_GEMINI_MODEL=gemini-3.1-flash-lite
 
-# Fonnte WhatsApp Gateway Configuration
+# Fonnte WhatsApp Gateway
 FONNTE_TOKEN=your-fonnte-token-here
 ```
 
-### 4. Database Setup (Supabase)
+### 4. Setup Database (Supabase)
+1. Buka dashboard project Supabase Anda.
+2. Masuk ke menu **SQL Editor**.
+3. Jalankan isi berkas [`supabase/schema.sql`](supabase/schema.sql) untuk membuat tabel (`stores`, `products`, `orders`, `categories`, `store_links`, `reviews`, `ai_chat_sessions`) beserta kebijakan *Row Level Security (RLS)*.
 
-1. Open your Supabase Project Dashboard.
-2. Navigate to the **SQL Editor**.
-3. Copy and run the contents of [`supabase/schema.sql`](supabase/schema.sql) to set up tables (`stores`, `products`, `orders`, `categories`, `store_links`, `reviews`, `ai_chat_sessions`) and Row Level Security (RLS) policies.
-
-### 5. Run Development Server
-
+### 5. Jalankan Local Development Server
 ```bash
 npm run dev
 ```
+Buka browser di `http://localhost:5173`.
 
-Visit `http://localhost:5173` in your browser.
-
-### 6. Build for Production
-
+### 6. Build Produksi
 ```bash
 npm run build
 ```
-
-The production-ready static assets will be compiled into the `dist/` directory.
+Berkas bundel statis produksi siap rilis akan terkompilasi di direktori `dist/`.
 
 ---
 
-## Project Directory Structure
+## Deployment URL
 
-```text
-tautanAI/
-├── api/
-│   └── whatsapp.ts           # Autonomous WhatsApp AI Webhook & Fonnte Dispatcher
-├── public/
-│   ├── .htaccess             # Apache rewrite rules for SPA client routing on cPanel
-│   └── vite.svg              # Brand icon
-├── scripts/
-│   ├── seed_mock_account.mjs # Database seeder script
-│   └── verify_seeded_data.mjs# Data verification test utility
-├── src/
-│   ├── components/
-│   │   ├── auth/             # Login, Signup, & Auth modal dialogs
-│   │   ├── common/           # Shared components (Navbar, Badge, TopProgressBar)
-│   │   ├── dashboard/        # Merchant analytics, RevenueChart, OrderEditModal
-│   │   ├── storefront/       # Public store components (ProductCard, CartDrawer)
-│   │   └── ui/               # Base UI primitives (Button, Modal, Toaster)
-│   ├── lib/
-│   │   ├── gemini.ts         # Autonomous AI Processing Engine & Function Calling logic
-│   │   ├── supabase.ts       # Supabase client, data access layer & mock fallback
-│   │   └── utils.ts          # Currency formatter, order code generator, WhatsApp formatter
-│   ├── pages/
-│   │   ├── AuthPage.tsx      # Sign-in & Sign-up page
-│   │   ├── CatalogPage.tsx   # Product & variant management
-│   │   ├── CustomersPage.tsx # Customer directory & lifetime value CRM
-│   │   ├── DashboardPage.tsx # Financial summary & revenue charts
-│   │   ├── LandingPage.tsx   # Platform landing & feature showcase
-│   │   ├── OnboardingPage.tsx# New store setup wizard
-│   │   ├── OrdersPage.tsx    # Order pipeline & status management
-│   │   ├── ReportsPage.tsx   # Detailed financial & conversion reports
-│   │   ├── ReviewsPage.tsx   # Buyer rating & review management
-│   │   ├── SettingsPage.tsx  # Store profile, Fonnte & AI Persona settings
-│   │   └── StorefrontPage.tsx# Public link-in-bio & micro-catalogue
-│   ├── store/
-│   │   ├── useAuthStore.ts   # Merchant auth state & session persistence
-│   │   ├── useCartStore.ts   # Buyer cart, item quantities, and checkout state
-│   │   └── useToastStore.ts  # Notification toast system
-│   ├── types/
-│   │   └── index.ts          # Core TypeScript data schemas & order statuses
-│   ├── App.tsx               # Route declarations & layout shell
-│   ├── index.css             # Tailwind design tokens & font imports
-│   └── main.tsx              # Application entrypoint
-├── supabase/
-│   └── schema.sql            # PostgreSQL schema, indexes, and RLS policies
-├── vercel.json               # Serverless API routing specification
-├── .cpanel.yml               # Automated cPanel deployment specification
-├── .env.example              # Environment variables template
-├── LICENSE                   # MIT License
-├── PRD.md                    # Product Requirements Document
-├── SECURITY.md               # Security & vulnerability reporting policy
-├── tailwind.config.js        # Design tokens & color configuration
-├── tsconfig.json             # TypeScript compiler settings
-└── vite.config.ts            # Vite bundler plugins & path aliases
-```
+- **URL Aplikasi / MVP Utama:** [https://tautan-ai.vercel.app/](https://tautan-ai.vercel.app/)
+- **Etalase Demo Publik:** [https://tautan-ai.vercel.app/demo](https://tautan-ai.vercel.app/demo)
+- **Repository GitHub:** [https://github.com/haidirwf/TautanAI](https://github.com/haidirwf/TautanAI)
+
+---
+
+## Demo Account
+
+Untuk memudahkan pengujian oleh dewan juri tanpa perlu melakukan registrasi dari awal, kami telah menyediakan akun demo terverifikasi:
+
+- **Halaman Login:** [https://tautan-ai.vercel.app/login](https://tautan-ai.vercel.app/login)
+- **Email:** `demo@tautan.site`
+- **Password:** `demo123456password`
+- **Fitur Quick Demo:** Di halaman login tersedia tombol **"Gunakan Kredensial Demo"** untuk mengisi akun uji coba secara otomatis dalam satu klik.
+- **Pengujian Etalase Pembeli (Tanpa Login):** Juri dapat langsung menguji alur pemilihan produk, varian, dan keranjang belanja WhatsApp dengan membuka tautan etalase toko di [https://tautan-ai.vercel.app/demo](https://tautan-ai.vercel.app/demo).
+
+---
+
+## Known Limitations
+
+- **Konektivitas Gateway Pihak Ketiga:** Kecepatan respons balasan WhatsApp sangat bergantung pada uptime dan stabilitas *webhook dispatch* dari penyedia gateway pihak ketiga (Fonnte).
+- **Kualitas Citra Foto Struk Transfer:** Akurasi pembacaan *Vision OCR* dipengaruhi oleh pencahayaan dan resolusi gambar struk. Foto struk yang terpotong parah, buram, atau sobek memerlukan konfirmasi/pengecekan manual oleh penjual.
+- **Pencatatan Ongkos Kirim:** Pada versi MVP saat ini, perhitungan ongkos kirim ekspedisi masih diselesaikan secara konsultatif langsung antara pembeli dan AI di chat WhatsApp sebelum integrasi API kurir otomatis.
+
+---
+
+## Third-party Resources / Credits
+
+- **Google Gemini API:** Mesin utama model kecerdasan buatan percakapan natural dan analisis citra visual (Google AI Studio).
+- **Fonnte Gateway:** Layanan integrasi API WhatsApp untuk pengiriman dan penerimaan pesan webhook.
+- **Supabase:** Penyedia layanan infrastruktur *Backend-as-a-Service* (PostgreSQL 15, Storage Bucket, Auth, dan RLS).
+- **Unsplash:** Penyedia aset fotografi katalog contoh untuk demonstrasi toko (lisensi komersial bebas).
+- **AI Coding Assistant:** Pengembangan, pengujian arsitektur, dan optimasi prompt dibantu oleh Google Gemini 3.8 Flash melalui Antigravity CLI (`agy`).
+
+---
+
+## Team Members
+
+Kompetisi **AI Web Innovation Challenge — Bali DigiFest 2026** (Kategori SMK):
+
+- **Nama Tim:** Bekasi dan Sekitarnya juga Solo Raya
+- **Asal Instansi:** SMK IDN Solo, Kab. Karanganyar, Jawa Tengah
+- **Ketua Tim:** Muhammad Haidar Rauf Prayogo (Fullstack Web Developer & AI Engineering) — WhatsApp: `082173662010` | Email: `raufidnn@gmail.com`
+- **Anggota Tim:** Faiz Faishal Nugroho (Frontend Developer & UI/UX Specialist)
 
 ---
 
 ## Security Hardening & Resilience
 
-**tautanAI** implements multi-layered security and operational resilience:
-
-- **Dual-Layer Webhook Deduplication:** Combines an in-memory sliding cache (15-minute TTL) with database-level verification in `ai_chat_sessions` to eliminate duplicate message processing and prevent Fonnte 15-retry loops.
-- **Concurrent In-Flight Lock:** Fast 45-second debounce ensures that duplicate webhook requests arriving simultaneously across different serverless instances cannot trigger double replies.
-- **Group Isolation & Anti-Looping:** Webhook handlers immediately drop group messages (`@g.us`) and device self-echos to prevent infinite bot ping-pong loops.
-- **Guaranteed HTTP 200 Acknowledgment:** The webhook endpoint consistently returns HTTP 200 status codes for unhandled non-message events, status reports, and errors to prevent external retry floods.
-- **Row Level Security (RLS):** All Supabase database tables enforce strict RLS policies. Merchants can only read and mutate their own store records, catalog items, and financial data.
-- **Phone Number Normalization:** Standardizes Indonesian numbers across formats (`08...`, `8...`, `628...`) to ensure seamless order lookups and communication consistency.
-
----
-
-## Deployment Guide
-
-### Deploying to Vercel (Recommended for Full AI Automation)
-
-1. Connect your repository to Vercel.
-2. Ensure the build configuration is set to:
-   - **Framework Preset:** Vite
-   - **Build Command:** `npm run build`
-   - **Output Directory:** `dist`
-3. Add Environment Variables in Vercel Project Settings:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY` (optional, for administrative webhook writes)
-   - `VITE_GEMINI_API_KEY`
-   - `VITE_GEMINI_MODEL` (e.g. `gemini-3.1-flash-lite`)
-   - `FONNTE_TOKEN`
-4. Set your Webhook URL in the Fonnte Device Settings to:
-   `https://your-domain.vercel.app/api/whatsapp`
-5. Turn **Auto Read** to **On** in your Fonnte dashboard.
-
-### Deploying to cPanel (Shared Hosting for Frontend)
-
-1. Run `npm run build` locally or through CI/CD.
-2. Upload the contents of the `dist/` directory directly to your `public_html/` (or subdomain folder).
-3. The included `public/.htaccess` automatically ensures that client-side SPA routes (e.g. `/dashboard`, `/:slug`) resolve properly through `index.html`.
-
----
-
-## Contributing
-
-Contributions are welcome! If you want to contribute:
-
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature/amazing-feature`.
-3. Commit your changes following [Conventional Commits](https://www.conventionalcommits.org/): `git commit -m 'feat: add amazing feature'`.
-4. Push to the branch: `git push origin feature/amazing-feature`.
-5. Open a Pull Request.
-
-Please check [SECURITY.md](SECURITY.md) for vulnerability reporting guidelines.
+- **Dual-Layer Webhook Deduplication:** Penggabungan cache memori geser 15 menit dengan verifikasi database pada tabel `ai_chat_sessions` untuk mengeleminasi pemrosesan pesan duplikat dari retry Fonnte.
+- **In-Flight Lock (45 Detik):** Mencegah balasan ganda saat beberapa serverless instance menerima payload bersamaan.
+- **Group Isolation & Anti-Looping:** Pengabaian pesan grup WhatsApp (`@g.us`) dan pencegahan bot merespons pesannya sendiri (*device echo*).
+- **Jaminan HTTP 200 Acknowledgment:** Webhook selalu mengembalikan status HTTP 200 agar gateway Fonnte tidak mengirimkan pengulangan pesan (*spam retry loops*).
+- **Row Level Security (RLS):** Seluruh data toko, pesanan, dan keuangan diisolasi berdasarkan identitas pengguna merchant.
 
 ---
 
 ## License
 
-This project is licensed under the **[MIT License](LICENSE)**.
+Proyek ini dilisensikan di bawah **[MIT License](LICENSE)**.
 
 ```text
 Copyright (c) 2026 tautanAI contributors
+Bali DigiFest 2026 - AI Web Innovation Challenge
 ```
